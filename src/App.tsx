@@ -862,6 +862,7 @@ export default function App() {
   const [viewingBucket, setViewingBucket] = useState<Bucket | null>(null);
   const [creatingBucket, setCreatingBucket] = useState(false);
   const [newBucketName, setNewBucketName] = useState("");
+  const newBucketInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const handler = () => setIsMobile(window.innerWidth < 768);
@@ -920,8 +921,19 @@ export default function App() {
     setActivePage(page);
   };
 
+  const getNextBucketName = () => {
+    const base = "新しい桶";
+    const names = new Set(buckets.map((b) => b.name));
+    if (!names.has(base)) return base;
+    for (let i = 2; ; i++) {
+      const candidate = `${base} (${i})`;
+      if (!names.has(candidate)) return candidate;
+    }
+  };
+
   const handleCreateBucket = async () => {
-    if (!newBucketName.trim()) return;
+    if (!newBucketName.trim()) { setCreatingBucket(false); return; }
+    setCreatingBucket(false);
     const res = await fetch(`${API_BASE}/buckets`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -930,7 +942,6 @@ export default function App() {
     const bucket: Bucket = await res.json();
     setBuckets((prev) => [...prev, bucket]);
     setNewBucketName("");
-    setCreatingBucket(false);
   };
 
   const handleDeleteBucket = async (bucketId: number) => {
@@ -1035,7 +1046,7 @@ export default function App() {
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                   <div style={{ color: "#333", fontSize: 11, letterSpacing: 2, fontFamily: "'Noto Sans JP', sans-serif" }}>━━ 桶一覧 ━━</div>
                   <button
-                    onClick={() => { setCreatingBucket(true); setNewBucketName(""); }}
+                    onClick={() => { setNewBucketName(getNextBucketName()); setCreatingBucket(true); }}
                     style={{ padding: "6px 14px", background: "rgba(255,255,255,0.04)", border: "1px solid #2a2a3a", borderRadius: 8, color: "#777", fontSize: 12, cursor: "pointer", fontFamily: "'Noto Sans JP', sans-serif", transition: "all 0.2s" }}
                     onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#555"; e.currentTarget.style.color = "#bbb"; }}
                     onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#2a2a3a"; e.currentTarget.style.color = "#777"; }}>
@@ -1044,23 +1055,20 @@ export default function App() {
                 </div>
 
                 {creatingBucket && (
-                  <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+                  <div style={{ marginBottom: 16 }}>
                     <input
+                      ref={newBucketInputRef}
                       autoFocus
                       value={newBucketName}
                       onChange={(e) => setNewBucketName(e.target.value.slice(0, 20))}
-                      onKeyDown={(e) => { if (e.key === "Enter") handleCreateBucket(); if (e.key === "Escape") setCreatingBucket(false); }}
-                      placeholder="桶の名前（20字まで）"
-                      style={{ flex: 1, background: "rgba(255,255,255,0.04)", border: "1px solid #333", borderRadius: 8, padding: "8px 12px", color: "#e0e0e0", fontSize: 13, fontFamily: "'Noto Sans JP', sans-serif", outline: "none" }}
+                      onFocus={(e) => e.target.select()}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") { e.currentTarget.blur(); }
+                        if (e.key === "Escape") { setNewBucketName(""); e.currentTarget.blur(); }
+                      }}
+                      onBlur={handleCreateBucket}
+                      style={{ width: "100%", boxSizing: "border-box", background: "rgba(255,255,255,0.06)", border: "1px solid #555", borderRadius: 8, padding: "8px 12px", color: "#e0e0e0", fontSize: 13, fontFamily: "'Noto Sans JP', sans-serif", outline: "none" }}
                     />
-                    <button onClick={handleCreateBucket} disabled={!newBucketName.trim()}
-                      style={{ padding: "8px 14px", background: newBucketName.trim() ? "#c0392b" : "#222", border: "none", borderRadius: 8, color: newBucketName.trim() ? "#fff" : "#444", cursor: newBucketName.trim() ? "pointer" : "not-allowed", fontSize: 12, fontFamily: "'Noto Sans JP', sans-serif", fontWeight: 700 }}>
-                      作る
-                    </button>
-                    <button onClick={() => setCreatingBucket(false)}
-                      style={{ padding: "8px 10px", background: "rgba(255,255,255,0.03)", border: "1px solid #2a2a3a", borderRadius: 8, color: "#555", cursor: "pointer", fontSize: 12 }}>
-                      ✕
-                    </button>
                   </div>
                 )}
 
