@@ -30,6 +30,15 @@ type Comment = {
   user_id: string;
   likes: number;
   created_at: string;
+  liked_by_user: boolean;
+};
+
+type Reply = {
+  id: number;
+  comment_id: number;
+  text: string;
+  user_id: string;
+  created_at: string;
 };
 
 type Bucket = {
@@ -262,39 +271,107 @@ function ConveyorBelt({ posts, likedIds, onLike, onUnlike, onOpenComments }: {
 
 function CommentModal({ post, onClose, likedIds, userId }: { post: Post; onClose: () => void; likedIds: Set<number>; userId: string }) {
   const [comments, setComments] = useState<Comment[]>([]);
+  const [replies, setReplies] = useState<Record<number, Reply[]>>({});
   const [input, setInput] = useState("");
+  const [replyingTo, setReplyingTo] = useState<number | null>(null);
+  const [replyTexts, setReplyTexts] = useState<Record<number, string>>({});
   const canComment = likedIds.has(post.id);
   const tier = TIER_CONFIG[post.tier];
 
-  useEffect(() => {
-    fetch(`${API_BASE}/posts/${post.id}/comments`)
-      .then((r) => r.json())
-      .then(setComments)
-      .catch(() => {});
-  }, [post.id]);
+  // ダブルタップ検出用
+  const heartTimers = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
+  const heartCounts = useRef<Record<number, number>>({});
+
+  const fetchComments = async () => {
+    const data: Comment[] = await fetch(`${API_BASE}/posts/${post.id}/comments?user_id=${userId}`)
+      .then((r) => r.json()).catch(() => []);
+    setComments(data);
+    // 全コメントの返信を並列取得
+    const entries = await Promise.all(
+      data.map(async (c) => {
+        const reps: Reply[] = await fetch(`${API_BASE}/comments/${c.id}/replies`)
+          .then((r) => r.json()).catch(() => []);
+        return [c.id, reps] as [number, Reply[]];
+      })
+    );
+    setReplies(Object.fromEntries(entries));
+  };
+
+  useEffect(() => { fetchComments(); }, [post.id]);
+
+  const handleHeartClick = (commentId: number, isLiked: boolean) => {
+    heartCounts.current[commentId] = (heartCounts.current[commentId] ?? 0) + 1;
+    clearTimeout(heartTimers.current[commentId]);
+    heartTimers.current[commentId] = setTimeout(() => {
+      const count = heartCounts.current[commentId] ?? 0;
+      heartCounts.current[commentId] = 0;
+      if (count >= 2 && isLiked) {
+        // ダブルタップ → いいね取り消し
+        fetch(`${API_BASE}/comments/${commentId}/like`, {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ user_id: userId }),
+        }).then(() => {
+          setComments((prev) => prev.map((c) => c.id === commentId ? { ...c, likes: Math.max(0, c.likes - 1), liked_by_user: false } : c));
+        });
+      } else if (count === 1 && !isLiked) {
+        // シングルタップ → いいね
+        fetch(`${API_BASE}/comments/${commentId}/like`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ user_id: userId }),
+        }).then(() => {
+          setComments((prev) => prev.map((c) => c.id === commentId ? { ...c, likes: c.likes + 1, liked_by_user: true } : c));
+        });
+      }
+    }, 260);
+  };
+
+  const handleAddReply = async (commentId: number) => {
+    const text = (replyTexts[commentId] ?? "").trim();
+    if (!text) return;
+    const reply: Reply = await fetch(`${API_BASE}/comments/${commentId}/replies`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, user_id: userId }),
+    }).then((r) => r.json());
+    setReplies((prev) => ({ ...prev, [commentId]: [...(prev[commentId] ?? []), reply] }));
+    setReplyTexts((prev) => ({ ...prev, [commentId]: "" }));
+    setReplyingTo(null);
+  };
+
+  const handleDeleteReply = async (replyId: number, commentId: number) => {
+    await fetch(`${API_BASE}/replies/${replyId}`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user_id: userId }),
+    });
+    setReplies((prev) => ({ ...prev, [commentId]: (prev[commentId] ?? []).filter((r) => r.id !== replyId) }));
+  };
 
   const submit = async () => {
     if (!input.trim()) return;
-    await fetch(`${API_BASE}/posts/${post.id}/comments`, {
+    const newComment: Comment = await fetch(`${API_BASE}/posts/${post.id}/comments`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text: input.trim(), user_id: userId }),
-    });
+    }).then((r) => r.json());
+    setComments((prev) => [...prev, { ...newComment, liked_by_user: false }]);
+    setReplies((prev) => ({ ...prev, [newComment.id]: [] }));
     setInput("");
-    fetch(`${API_BASE}/posts/${post.id}/comments`).then((r) => r.json()).then(setComments).catch(() => {});
   };
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }} onClick={onClose}>
-      <div style={{ background: "#0f0f1a", border: "1px solid #333", borderRadius: 20, width: "100%", maxWidth: 520, maxHeight: "80vh", overflow: "hidden", display: "flex", flexDirection: "column" }} onClick={(e) => e.stopPropagation()}>
-        <div style={{ padding: "16px 20px", borderBottom: "1px solid #222", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <div style={{ background: "#0f0f1a", border: "1px solid #333", borderRadius: 20, width: "100%", maxWidth: 540, maxHeight: "85vh", overflow: "hidden", display: "flex", flexDirection: "column" }} onClick={(e) => e.stopPropagation()}>
+        <div style={{ padding: "16px 20px", borderBottom: "1px solid #222", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
           <span style={{ color: "#e0e0e0", fontFamily: "'Noto Sans JP', sans-serif", fontSize: 14, fontWeight: 700 }}>
             💬 コメント欄 — <span style={{ color: "#888", fontWeight: 400 }}>{post.room || "フリー"}</span>
           </span>
           <button onClick={onClose} style={{ background: "none", border: "none", color: "#666", fontSize: 20, cursor: "pointer" }}>✕</button>
         </div>
 
-        <div style={{ padding: "14px 20px", background: "rgba(255,255,255,0.02)", borderBottom: "1px solid #1a1a2a" }}>
+        <div style={{ padding: "14px 20px", background: "rgba(255,255,255,0.02)", borderBottom: "1px solid #1a1a2a", flexShrink: 0 }}>
           <p style={{ color: "#c0c0c0", fontSize: 13, lineHeight: 1.7, margin: 0, fontFamily: "'Noto Sans JP', sans-serif" }}>{post.content}</p>
         </div>
 
@@ -303,20 +380,75 @@ function CommentModal({ post, onClose, likedIds, userId }: { post: Post; onClose
             <div style={{ color: "#444", fontSize: 12, fontFamily: "'Noto Sans JP', sans-serif", textAlign: "center", paddingTop: 20 }}>まだコメントはありません</div>
           )}
           {comments.map((c) => (
-            <div key={c.id} style={{ display: "flex", gap: 10, marginBottom: 14 }}>
-              <span style={{ fontSize: 18 }}>💬</span>
-              <div style={{ background: "rgba(255,255,255,0.03)", borderRadius: 12, padding: "8px 12px", flex: 1, border: "1px solid #1f1f2f" }}>
-                <div style={{ color: "#777", fontSize: 10, fontFamily: "'Noto Sans JP', sans-serif", marginBottom: 4 }}>
-                  {c.user_id === "system" ? "運営" : "ユーザー"} · {c.created_at.slice(0, 16).replace("T", " ")}
+            <div key={c.id} style={{ marginBottom: 18 }}>
+              {/* コメント本体 */}
+              <div style={{ display: "flex", gap: 10 }}>
+                <span style={{ fontSize: 16, marginTop: 2 }}>💬</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ background: "rgba(255,255,255,0.03)", borderRadius: 12, padding: "8px 12px", border: "1px solid #1f1f2f", position: "relative" }}>
+                    <div style={{ color: "#555", fontSize: 10, fontFamily: "'Noto Sans JP', sans-serif", marginBottom: 4 }}>
+                      {c.user_id === "system" ? "運営" : "ユーザー"} · {c.created_at.slice(0, 16).replace("T", " ")}
+                    </div>
+                    <p style={{ color: "#bbb", fontSize: 13, margin: 0, fontFamily: "'Noto Sans JP', sans-serif", lineHeight: 1.6 }}>{c.text}</p>
+                  </div>
+                  {/* アクション行 */}
+                  <div style={{ display: "flex", gap: 12, marginTop: 5, paddingLeft: 4, alignItems: "center" }}>
+                    <button
+                      onClick={() => handleHeartClick(c.id, c.liked_by_user)}
+                      title={c.liked_by_user ? "ダブルタップで取り消し" : "いいね"}
+                      style={{ background: "none", border: "none", cursor: "pointer", color: c.liked_by_user ? "#e74c3c" : "#555", fontSize: 12, fontFamily: "'Noto Sans JP', sans-serif", padding: 0, display: "flex", alignItems: "center", gap: 4, transition: "color 0.15s" }}>
+                      {c.liked_by_user ? "❤️" : "🤍"} {c.likes}
+                    </button>
+                    <button
+                      onClick={() => setReplyingTo(replyingTo === c.id ? null : c.id)}
+                      style={{ background: "none", border: "none", cursor: "pointer", color: "#555", fontSize: 12, fontFamily: "'Noto Sans JP', sans-serif", padding: 0, transition: "color 0.15s" }}
+                      onMouseEnter={(e) => (e.currentTarget.style.color = "#aaa")}
+                      onMouseLeave={(e) => (e.currentTarget.style.color = "#555")}>
+                      💬 返信{(replies[c.id]?.length ?? 0) > 0 ? ` (${replies[c.id].length})` : ""}
+                    </button>
+                  </div>
+
+                  {/* 返信一覧 */}
+                  {(replies[c.id] ?? []).map((r) => (
+                    <div key={r.id} style={{ marginTop: 6, paddingLeft: 14, borderLeft: "2px solid #1a1a2a" }}>
+                      <div style={{ background: "rgba(255,255,255,0.02)", borderRadius: 10, padding: "6px 10px", border: "1px solid #161626", position: "relative" }}>
+                        {r.user_id === userId && (
+                          <button
+                            onClick={() => handleDeleteReply(r.id, c.id)}
+                            style={{ position: "absolute", top: 4, right: 6, background: "none", border: "none", color: "#333", fontSize: 11, cursor: "pointer", padding: "1px 3px", transition: "color 0.15s" }}
+                            onMouseEnter={(e) => (e.currentTarget.style.color = "#e74c3c")}
+                            onMouseLeave={(e) => (e.currentTarget.style.color = "#333")}>🗑</button>
+                        )}
+                        <div style={{ color: "#555", fontSize: 10, fontFamily: "'Noto Sans JP', sans-serif", marginBottom: 3 }}>
+                          {r.user_id === "system" ? "運営" : "ユーザー"} · {r.created_at.slice(0, 16).replace("T", " ")}
+                        </div>
+                        <p style={{ color: "#aaa", fontSize: 12, margin: 0, fontFamily: "'Noto Sans JP', sans-serif", lineHeight: 1.55 }}>{r.text}</p>
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* 返信入力欄 */}
+                  {replyingTo === c.id && (
+                    <div style={{ marginTop: 8, paddingLeft: 14, display: "flex", gap: 6 }}>
+                      <input
+                        autoFocus
+                        value={replyTexts[c.id] ?? ""}
+                        onChange={(e) => setReplyTexts((prev) => ({ ...prev, [c.id]: e.target.value.slice(0, 80) }))}
+                        onKeyDown={(e) => e.key === "Enter" && handleAddReply(c.id)}
+                        placeholder="返信（80字まで）"
+                        style={{ flex: 1, background: "rgba(255,255,255,0.04)", border: "1px solid #2a2a3a", borderRadius: 8, padding: "7px 10px", color: "#e0e0e0", fontFamily: "'Noto Sans JP', sans-serif", fontSize: 12, outline: "none" }}
+                      />
+                      <button onClick={() => handleAddReply(c.id)} style={{ padding: "7px 12px", background: tier.bg, border: "none", borderRadius: 8, color: "#fff", cursor: "pointer", fontSize: 12, fontFamily: "'Noto Sans JP', sans-serif", fontWeight: 700 }}>送信</button>
+                    </div>
+                  )}
                 </div>
-                <p style={{ color: "#bbb", fontSize: 13, margin: 0, fontFamily: "'Noto Sans JP', sans-serif", lineHeight: 1.6 }}>{c.text}</p>
               </div>
             </div>
           ))}
         </div>
 
         {canComment ? (
-          <div style={{ padding: "12px 20px", borderTop: "1px solid #222", display: "flex", gap: 8 }}>
+          <div style={{ padding: "12px 20px", borderTop: "1px solid #222", display: "flex", gap: 8, flexShrink: 0 }}>
             <input
               value={input}
               onChange={(e) => setInput(e.target.value.slice(0, 80))}
@@ -327,7 +459,7 @@ function CommentModal({ post, onClose, likedIds, userId }: { post: Post; onClose
             <button onClick={submit} style={{ padding: "10px 16px", background: tier.bg, border: "none", borderRadius: 10, color: "#fff", cursor: "pointer", fontWeight: 700, fontSize: 13, fontFamily: "'Noto Sans JP', sans-serif" }}>送信</button>
           </div>
         ) : (
-          <div style={{ padding: "12px 20px", borderTop: "1px solid #222", textAlign: "center", color: "#444", fontSize: 12, fontFamily: "'Noto Sans JP', sans-serif" }}>
+          <div style={{ padding: "12px 20px", borderTop: "1px solid #222", textAlign: "center", color: "#444", fontSize: 12, fontFamily: "'Noto Sans JP', sans-serif", flexShrink: 0 }}>
             🔒 先に皿を取るとコメントできます
           </div>
         )}
