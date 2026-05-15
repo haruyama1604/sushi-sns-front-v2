@@ -288,7 +288,7 @@ function PlateCard({
   );
 }
 
-function ConveyorBelt({ posts, likedIds, onLike, onUnlike, onOpenComments, userId, onDelete, forcePaused, reducedMotion, showSpoilers, laneCount, lane1Dir, lane2Dir }: {
+function ConveyorBelt({ posts, likedIds, onLike, onUnlike, onOpenComments, userId, onDelete, forcePaused, reducedMotion, showSpoilers, laneCount, lane1Dir, lane2Dir, isMobile, mobileDir }: {
   posts: Post[];
   likedIds: Set<number>;
   onLike: (id: number) => void;
@@ -302,6 +302,8 @@ function ConveyorBelt({ posts, likedIds, onLike, onUnlike, onOpenComments, userI
   laneCount?: 1 | 2;
   lane1Dir?: "rtl" | "ltr";
   lane2Dir?: "rtl" | "ltr";
+  isMobile?: boolean;
+  mobileDir?: "vertical" | "horizontal";
 }) {
   const track1Ref = useRef<HTMLDivElement>(null);
   const track2Ref = useRef<HTMLDivElement>(null);
@@ -310,6 +312,8 @@ function ConveyorBelt({ posts, likedIds, onLike, onUnlike, onOpenComments, userI
   const pos1Ref = useRef(0);
   const pos2Ref = useRef(0);
   const rafRef = useRef<number>(0);
+
+  const isVertical = !!isMobile && mobileDir !== "horizontal";
 
   useEffect(() => {
     const t1 = track1Ref.current;
@@ -323,15 +327,22 @@ function ConveyorBelt({ posts, likedIds, onLike, onUnlike, onOpenComments, userI
       if (!last) last = ts;
       if (!paused) {
         const delta = (ts - last) * 0.04;
-        const total1 = t1.scrollWidth / 2;
-        pos1Ref.current += delta;
-        if (pos1Ref.current >= total1) pos1Ref.current -= total1;
-        t1.style.transform = dir1 === "rtl" ? `translateX(-${pos1Ref.current}px)` : `translateX(${pos1Ref.current - total1}px)`;
-        if (lanes === 2 && t2) {
-          const total2 = t2.scrollWidth / 2;
-          pos2Ref.current += delta;
-          if (pos2Ref.current >= total2) pos2Ref.current -= total2;
-          t2.style.transform = dir2 === "rtl" ? `translateX(-${pos2Ref.current}px)` : `translateX(${pos2Ref.current - total2}px)`;
+        if (isVertical) {
+          const total1 = t1.scrollHeight / 2;
+          pos1Ref.current += delta;
+          if (pos1Ref.current >= total1) pos1Ref.current -= total1;
+          t1.style.transform = `translateY(${pos1Ref.current - total1}px)`;
+        } else {
+          const total1 = t1.scrollWidth / 2;
+          pos1Ref.current += delta;
+          if (pos1Ref.current >= total1) pos1Ref.current -= total1;
+          t1.style.transform = dir1 === "rtl" ? `translateX(-${pos1Ref.current}px)` : `translateX(${pos1Ref.current - total1}px)`;
+          if (lanes === 2 && t2) {
+            const total2 = t2.scrollWidth / 2;
+            pos2Ref.current += delta;
+            if (pos2Ref.current >= total2) pos2Ref.current -= total2;
+            t2.style.transform = dir2 === "rtl" ? `translateX(-${pos2Ref.current}px)` : `translateX(${pos2Ref.current - total2}px)`;
+          }
         }
       }
       last = ts;
@@ -339,9 +350,23 @@ function ConveyorBelt({ posts, likedIds, onLike, onUnlike, onOpenComments, userI
     };
     rafRef.current = requestAnimationFrame(step);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [paused, laneCount, lane1Dir, lane2Dir]);
+  }, [paused, laneCount, lane1Dir, lane2Dir, isVertical]);
 
   const doubled = [...posts, ...posts];
+
+  if (isVertical) {
+    return (
+      <div style={{ position: "relative", overflow: "hidden", height: "65vh" }}>
+        <div ref={track1Ref} style={{ display: "flex", flexDirection: "column", gap: 16, height: "max-content", padding: "16px 0", alignItems: "center" }}>
+          {doubled.map((post, i) => (
+            <PlateCard key={`v-${post.id}-${i}`} post={post} isLiked={likedIds.has(post.id)} onLike={onLike} onUnlike={onUnlike} onOpenComments={onOpenComments} userId={userId} onDelete={onDelete} reducedMotion={reducedMotion} showSpoilers={showSpoilers} />
+          ))}
+        </div>
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 80, background: "linear-gradient(180deg, #0a0a12, transparent)", zIndex: 2, pointerEvents: "none" }} />
+        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 80, background: "linear-gradient(0deg, #0a0a12, transparent)", zIndex: 2, pointerEvents: "none" }} />
+      </div>
+    );
+  }
 
   return (
     <div style={{ position: "relative", overflow: "hidden", padding: "20px 0" }}
@@ -625,7 +650,7 @@ function PostModal({ currentRoom, onClose, onPosted, userId }: { currentRoom: st
   );
 }
 
-function SettingsModal({ onClose, reducedMotion, onToggleReducedMotion, showSpoilers, onToggleShowSpoilers, laneCount, onSetLaneCount, lane1Dir, onSetLane1Dir, lane2Dir, onSetLane2Dir }: {
+function SettingsModal({ onClose, reducedMotion, onToggleReducedMotion, showSpoilers, onToggleShowSpoilers, laneCount, onSetLaneCount, lane1Dir, onSetLane1Dir, lane2Dir, onSetLane2Dir, isMobile, mobileConveyorDir, onSetMobileConveyorDir }: {
   onClose: () => void;
   reducedMotion: boolean;
   onToggleReducedMotion: () => void;
@@ -637,6 +662,9 @@ function SettingsModal({ onClose, reducedMotion, onToggleReducedMotion, showSpoi
   onSetLane1Dir: (d: "rtl" | "ltr") => void;
   lane2Dir: "rtl" | "ltr";
   onSetLane2Dir: (d: "rtl" | "ltr") => void;
+  isMobile: boolean;
+  mobileConveyorDir: "vertical" | "horizontal";
+  onSetMobileConveyorDir: (d: "vertical" | "horizontal") => void;
 }) {
   const pending = ["流れる速さの調節", "ダークモード切り替え", "SEのオン・オフ", "BGMのオン・オフ", "文字サイズの調節", "言語切り替え"];
 
@@ -664,6 +692,20 @@ function SettingsModal({ onClose, reducedMotion, onToggleReducedMotion, showSpoi
           <button onClick={onClose} style={{ background: "none", border: "none", color: "#666", fontSize: 20, cursor: "pointer" }}>✕</button>
         </div>
         <div style={{ padding: 20 }}>
+
+          {/* スマホ専用: レーンの向き */}
+          {isMobile && (
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: "1px solid #1a1a2a" }}>
+              <span style={{ color: "#e0e0e0", fontSize: 13, fontFamily: "'Noto Sans JP', sans-serif" }}>レーンの向き</span>
+              <div style={{ display: "flex", gap: 4 }}>
+                {(["vertical", "horizontal"] as const).map((d) => (
+                  <button key={d} onClick={() => onSetMobileConveyorDir(d)} style={{ padding: "3px 10px", borderRadius: 8, border: `1px solid ${mobileConveyorDir === d ? "#e74c3c" : "#333"}`, background: mobileConveyorDir === d ? "rgba(192,57,43,0.2)" : "rgba(255,255,255,0.03)", color: mobileConveyorDir === d ? "#e74c3c" : "#666", fontSize: 11, cursor: "pointer", fontFamily: "'Noto Sans JP', sans-serif", fontWeight: 600 }}>
+                    {d === "vertical" ? "縦" : "横"}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* レーン数 */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: "1px solid #1a1a2a" }}>
@@ -977,6 +1019,7 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
   const [showSpoilers, setShowSpoilers] = useState(false);
+  const [mobileConveyorDir, setMobileConveyorDir] = useState<"vertical" | "horizontal">("vertical");
   const [laneCount, setLaneCount] = useState<1 | 2>(2);
   const [lane1Dir, setLane1Dir] = useState<"rtl" | "ltr">("rtl");
   const [lane2Dir, setLane2Dir] = useState<"rtl" | "ltr">("ltr");
@@ -1255,7 +1298,7 @@ export default function App() {
                 <div style={{ padding: "12px 24px 4px", flexShrink: 0 }}>
                   <div style={{ color: "#333", fontSize: 11, letterSpacing: 2, fontFamily: "'Noto Sans JP', sans-serif" }}>━━ 皿が流れています。気に入ったら取ってください ━━</div>
                 </div>
-                <ConveyorBelt posts={filteredPosts} likedIds={likedIds} onLike={handleLike} onUnlike={handleUnlike} onOpenComments={handleOpenComments} userId={userId} onDelete={handleDeletePost} forcePaused={showSettings} reducedMotion={reducedMotion} showSpoilers={showSpoilers} laneCount={laneCount} lane1Dir={lane1Dir} lane2Dir={lane2Dir} />
+                <ConveyorBelt posts={filteredPosts} likedIds={likedIds} onLike={handleLike} onUnlike={handleUnlike} onOpenComments={handleOpenComments} userId={userId} onDelete={handleDeletePost} forcePaused={showSettings} reducedMotion={reducedMotion} showSpoilers={showSpoilers} laneCount={laneCount} lane1Dir={lane1Dir} lane2Dir={lane2Dir} isMobile={isMobile} mobileDir={mobileConveyorDir} />
                 <div style={{ padding: "24px", borderTop: "1px solid #1a1a2a" }}>
                   <div style={{ color: "#333", fontSize: 11, letterSpacing: 2, fontFamily: "'Noto Sans JP', sans-serif", marginBottom: 16 }}>━━ 全ての皿 ━━</div>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 12 }}>
@@ -1276,7 +1319,7 @@ export default function App() {
       {/* Modals */}
       {commentPost && <CommentModal post={commentPost} onClose={() => setCommentPost(null)} likedIds={likedIds} userId={userId} />}
       {showPost && <PostModal currentRoom={selected?.room} onClose={() => setShowPost(false)} onPosted={fetchPosts} userId={userId} />}
-      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} reducedMotion={reducedMotion} onToggleReducedMotion={() => setReducedMotion((v) => !v)} showSpoilers={showSpoilers} onToggleShowSpoilers={() => setShowSpoilers((v) => !v)} laneCount={laneCount} onSetLaneCount={setLaneCount} lane1Dir={lane1Dir} onSetLane1Dir={setLane1Dir} lane2Dir={lane2Dir} onSetLane2Dir={setLane2Dir} />}
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} reducedMotion={reducedMotion} onToggleReducedMotion={() => setReducedMotion((v) => !v)} showSpoilers={showSpoilers} onToggleShowSpoilers={() => setShowSpoilers((v) => !v)} laneCount={laneCount} onSetLaneCount={setLaneCount} lane1Dir={lane1Dir} onSetLane1Dir={setLane1Dir} lane2Dir={lane2Dir} onSetLane2Dir={setLane2Dir} isMobile={isMobile} mobileConveyorDir={mobileConveyorDir} onSetMobileConveyorDir={setMobileConveyorDir} />}
       {bucketTarget && (
         <BucketSelectorModal
           post={bucketTarget}
