@@ -1151,26 +1151,42 @@ export default function App() {
 
         {/* Header */}
         <div style={{ padding: "14px 24px", background: "rgba(8,8,18,0.95)", borderBottom: "1px solid #1a1a2a", display: "flex", alignItems: "center", justifyContent: "space-between", backdropFilter: "blur(10px)", flexShrink: 0 }}>
-          <div>
-            {isMobile
-              ? <img src="/logo.svg" alt="あにすし" style={{ height: 32, display: "block", marginBottom: 2 }} />
-              : <div style={{ color: "#e0e0e0", fontSize: 16, fontWeight: 700, fontFamily: "'Noto Serif JP', serif" }}>
-                  {activePage === "collection"
-                    ? "📦 コレクション"
-                    : `${selected?.sub?.icon ?? ""} ${selected?.sub?.label ?? ""} › #${selected?.room ?? "ホーム"}`}
-                </div>
-            }
-            <div style={{ color: "#444", fontSize: 10, marginTop: 2 }}>
-              {activePage === "collection" ? "取った皿・桶を管理" : "回転中・ホバーで停止"}
+          {isMobile ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <img src="/logo.svg" alt="あにすし" style={{ height: 24 }} />
+              <div style={{ display: "flex", gap: 10 }}>
+                {([
+                  ["🍽", posts.length],
+                  ["✅", likedIds.size],
+                  ["✨", posts.filter((p) => p.tier === "gold").length],
+                  ["🔒", likedIds.size],
+                ] as [string, number][]).map(([icon, val]) => (
+                  <div key={icon} style={{ textAlign: "center" }}>
+                    <div style={{ fontSize: 11 }}>{icon}</div>
+                    <div style={{ color: "#e0e0e0", fontSize: 11, fontWeight: 700, fontFamily: "'Noto Serif JP', serif", lineHeight: 1 }}>{val}</div>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div>
+              <div style={{ color: "#e0e0e0", fontSize: 16, fontWeight: 700, fontFamily: "'Noto Serif JP', serif" }}>
+                {activePage === "collection"
+                  ? "📦 コレクション"
+                  : `${selected?.sub?.icon ?? ""} ${selected?.sub?.label ?? ""} › #${selected?.room ?? "ホーム"}`}
+              </div>
+              <div style={{ color: "#444", fontSize: 10, marginTop: 2 }}>
+                {activePage === "collection" ? "取った皿・桶を管理" : "回転中・ホバーで停止"}
+              </div>
+            </div>
+          )}
           <button onClick={() => setShowPost(true)} style={{ padding: "8px 18px", background: "#c0392b", border: "none", borderRadius: 10, color: "#fff", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "'Noto Sans JP', sans-serif", boxShadow: "0 0 20px #c0392b55" }}>
             + 皿を出す
           </button>
         </div>
 
-        {/* Stats */}
-        <StatsBar posts={posts} likedIds={likedIds} />
+        {/* Stats (PC only) */}
+        {!isMobile && <StatsBar posts={posts} likedIds={likedIds} />}
 
         {/* Tabs (ホームのみ) */}
         {activePage === "home" && (
