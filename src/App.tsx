@@ -271,7 +271,7 @@ function PlateCard({
   );
 }
 
-function ConveyorBelt({ posts, likedIds, onLike, onUnlike, onOpenComments, userId, onDelete, forcePaused }: {
+function ConveyorBelt({ posts, likedIds, onLike, onUnlike, onOpenComments, userId, onDelete, forcePaused, reducedMotion }: {
   posts: Post[];
   likedIds: Set<number>;
   onLike: (id: number) => void;
@@ -280,6 +280,7 @@ function ConveyorBelt({ posts, likedIds, onLike, onUnlike, onOpenComments, userI
   userId: string;
   onDelete: (id: number) => void;
   forcePaused?: boolean;
+  reducedMotion?: boolean;
 }) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [hoverPaused, setHoverPaused] = useState(false);
@@ -313,7 +314,7 @@ function ConveyorBelt({ posts, likedIds, onLike, onUnlike, onOpenComments, userI
       onMouseEnter={() => setHoverPaused(true)} onMouseLeave={() => setHoverPaused(false)}>
       <div ref={trackRef} style={{ display: "flex", gap: 16, width: "max-content", padding: "0 16px", position: "relative", zIndex: 1 }}>
         {doubled.map((post, i) => (
-          <PlateCard key={`${post.id}-${i}`} post={post} isLiked={likedIds.has(post.id)} onLike={onLike} onUnlike={onUnlike} onOpenComments={onOpenComments} userId={userId} onDelete={onDelete} />
+          <PlateCard key={`${post.id}-${i}`} post={post} isLiked={likedIds.has(post.id)} onLike={onLike} onUnlike={onUnlike} onOpenComments={onOpenComments} userId={userId} onDelete={onDelete} reducedMotion={reducedMotion} />
         ))}
       </div>
       <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 80, background: "linear-gradient(90deg, #0a0a12, transparent)", zIndex: 2, pointerEvents: "none" }} />
@@ -1141,7 +1142,7 @@ export default function App() {
                 <div style={{ padding: "12px 24px 4px", flexShrink: 0 }}>
                   <div style={{ color: "#333", fontSize: 11, letterSpacing: 2, fontFamily: "'Noto Sans JP', sans-serif" }}>━━ 皿が流れています。気に入ったら取ってください ━━</div>
                 </div>
-                <ConveyorBelt posts={filteredPosts} likedIds={likedIds} onLike={handleLike} onUnlike={handleUnlike} onOpenComments={handleOpenComments} userId={userId} onDelete={handleDeletePost} forcePaused={showSettings} />
+                <ConveyorBelt posts={filteredPosts} likedIds={likedIds} onLike={handleLike} onUnlike={handleUnlike} onOpenComments={handleOpenComments} userId={userId} onDelete={handleDeletePost} forcePaused={showSettings} reducedMotion={reducedMotion} />
                 <div style={{ padding: "24px", borderTop: "1px solid #1a1a2a" }}>
                   <div style={{ color: "#333", fontSize: 11, letterSpacing: 2, fontFamily: "'Noto Sans JP', sans-serif", marginBottom: 16 }}>━━ 全ての皿 ━━</div>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 12 }}>
