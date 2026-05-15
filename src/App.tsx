@@ -106,6 +106,7 @@ function PlateCard({
   onDelete,
   reducedMotion,
   showSpoilers,
+  fullWidth,
 }: {
   post: Post;
   onLike: (id: number) => void;
@@ -117,6 +118,7 @@ function PlateCard({
   onDelete?: (id: number) => void;
   reducedMotion?: boolean;
   showSpoilers?: boolean;
+  fullWidth?: boolean;
 }) {
   const tier = TIER_CONFIG[post.tier];
   const [animating, setAnimating] = useState(false);
@@ -147,8 +149,8 @@ function PlateCard({
   return (
     <div
       style={{
-        minWidth: 280,
-        maxWidth: 280,
+        minWidth: fullWidth ? "100%" : 280,
+        maxWidth: fullWidth ? "100%" : 280,
         background: tier.cardBg,
         border: `1.5px solid ${tier.border}44`,
         borderRadius: 16,
@@ -357,9 +359,9 @@ function ConveyorBelt({ posts, likedIds, onLike, onUnlike, onOpenComments, userI
   if (isVertical) {
     return (
       <div style={{ position: "relative", overflow: "hidden", height: "65vh" }}>
-        <div ref={track1Ref} style={{ display: "flex", flexDirection: "column", gap: 16, height: "max-content", padding: "16px 0", alignItems: "center" }}>
+        <div ref={track1Ref} style={{ display: "flex", flexDirection: "column", gap: 16, height: "max-content", padding: "16px 16px", width: "100%", boxSizing: "border-box" }}>
           {doubled.map((post, i) => (
-            <PlateCard key={`v-${post.id}-${i}`} post={post} isLiked={likedIds.has(post.id)} onLike={onLike} onUnlike={onUnlike} onOpenComments={onOpenComments} userId={userId} onDelete={onDelete} reducedMotion={reducedMotion} showSpoilers={showSpoilers} />
+            <PlateCard key={`v-${post.id}-${i}`} post={post} isLiked={likedIds.has(post.id)} onLike={onLike} onUnlike={onUnlike} onOpenComments={onOpenComments} userId={userId} onDelete={onDelete} reducedMotion={reducedMotion} showSpoilers={showSpoilers} fullWidth />
           ))}
         </div>
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 80, background: "linear-gradient(180deg, #0a0a12, transparent)", zIndex: 2, pointerEvents: "none" }} />
