@@ -131,24 +131,21 @@ function PlateCard({
         minWidth: 280,
         maxWidth: 280,
         background: tier.cardBg,
-        border: isOwn ? "1.5px solid rgba(255,255,255,0.6)" : `1.5px solid ${tier.border}44`,
+        border: `1.5px solid ${tier.border}44`,
         borderRadius: 16,
         overflow: "hidden",
         position: "relative",
         cursor: "pointer",
         transition: "transform 0.2s, box-shadow 0.2s",
         flexShrink: 0,
-        boxShadow: isOwn ? "0 0 12px rgba(255,255,255,0.25), 0 0 24px rgba(255,255,255,0.1)" : undefined,
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.transform = "translateY(-4px) scale(1.02)";
-        e.currentTarget.style.boxShadow = isOwn
-          ? `0 8px 32px ${tier.glow}55, 0 0 16px rgba(255,255,255,0.35), 0 0 32px rgba(255,255,255,0.15)`
-          : `0 8px 32px ${tier.glow}55`;
+        e.currentTarget.style.boxShadow = `0 8px 32px ${tier.glow}55`;
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.transform = "";
-        e.currentTarget.style.boxShadow = isOwn ? "0 0 12px rgba(255,255,255,0.25), 0 0 24px rgba(255,255,255,0.1)" : "";
+        e.currentTarget.style.boxShadow = "";
       }}
     >
       {/* Tier badge */}
