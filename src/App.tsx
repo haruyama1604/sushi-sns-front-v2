@@ -102,6 +102,7 @@ function PlateCard({
   isLiked,
   onAddToBucket,
   userId,
+  onDelete,
 }: {
   post: Post;
   onLike: (id: number) => void;
@@ -110,9 +111,11 @@ function PlateCard({
   isLiked: boolean;
   onAddToBucket?: (post: Post) => void;
   userId?: string;
+  onDelete?: (id: number) => void;
 }) {
   const tier = TIER_CONFIG[post.tier];
   const [animating, setAnimating] = useState(false);
+  const [confirming, setConfirming] = useState(false);
   const isOwn = !!userId && post.user_id === userId;
 
   const handleLike = () => {
@@ -123,6 +126,14 @@ function PlateCard({
       setTimeout(() => setAnimating(false), 600);
       onLike(post.id);
     }
+  };
+
+  const handleDeleteConfirm = () => {
+    fetch(`${API_BASE}/posts/${post.id}`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user_id: userId }),
+    }).then(() => onDelete?.(post.id));
   };
 
   return (
@@ -153,10 +164,50 @@ function PlateCard({
         {tier.label}
       </div>
 
-      {/* Own-post badge */}
+      {/* Own-post badge + delete button */}
       {isOwn && (
-        <div style={{ position: "absolute", top: 34, right: 10, background: "rgba(255,255,255,0.12)", color: "#fff", fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 20, fontFamily: "'Noto Sans JP', sans-serif", border: "1px solid rgba(255,255,255,0.3)", zIndex: 2, backdropFilter: "blur(4px)" }}>
-          ✍️ あなた
+        <div style={{ position: "absolute", top: 34, right: 10, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, zIndex: 2 }}>
+          <div style={{ background: "rgba(255,255,255,0.12)", color: "#fff", fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 20, fontFamily: "'Noto Sans JP', sans-serif", border: "1px solid rgba(255,255,255,0.3)", backdropFilter: "blur(4px)" }}>
+            ✍️ あなた
+          </div>
+          {onDelete && (
+            <button
+              onClick={(e) => { e.stopPropagation(); setConfirming(true); }}
+              style={{ background: "rgba(192,57,43,0.15)", border: "1px solid rgba(192,57,43,0.4)", color: "#e74c3c", fontSize: 9, fontWeight: 700, padding: "2px 7px", borderRadius: 20, cursor: "pointer", fontFamily: "'Noto Sans JP', sans-serif", transition: "all 0.2s" }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(192,57,43,0.35)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(192,57,43,0.15)"; }}
+            >
+              取り消す
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Delete confirmation overlay */}
+      {confirming && (
+        <div
+          style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.75)", borderRadius: 16, zIndex: 10, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, backdropFilter: "blur(4px)" }}
+          onClick={() => setConfirming(false)}
+        >
+          <div style={{ color: "#e0e0e0", fontSize: 13, fontWeight: 700, fontFamily: "'Noto Sans JP', sans-serif" }}>本当に取り消しますか？</div>
+          <div style={{ display: "flex", gap: 10 }} onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={handleDeleteConfirm}
+              style={{ padding: "7px 20px", background: "rgba(192,57,43,0.3)", border: "1px solid #e74c3c", borderRadius: 10, color: "#e74c3c", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'Noto Sans JP', sans-serif", transition: "all 0.2s" }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(192,57,43,0.55)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(192,57,43,0.3)"; }}
+            >
+              はい
+            </button>
+            <button
+              onClick={() => setConfirming(false)}
+              style={{ padding: "7px 20px", background: "rgba(255,255,255,0.06)", border: "1px solid #333", borderRadius: 10, color: "#aaa", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'Noto Sans JP', sans-serif", transition: "all 0.2s" }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.12)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; }}
+            >
+              いいえ
+            </button>
+          </div>
         </div>
       )}
 
@@ -215,13 +266,14 @@ function PlateCard({
   );
 }
 
-function ConveyorBelt({ posts, likedIds, onLike, onUnlike, onOpenComments, userId }: {
+function ConveyorBelt({ posts, likedIds, onLike, onUnlike, onOpenComments, userId, onDelete }: {
   posts: Post[];
   likedIds: Set<number>;
   onLike: (id: number) => void;
   onUnlike: (id: number) => void;
   onOpenComments: (post: Post) => void;
   userId: string;
+  onDelete: (id: number) => void;
 }) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [paused, setPaused] = useState(false);
@@ -254,7 +306,7 @@ function ConveyorBelt({ posts, likedIds, onLike, onUnlike, onOpenComments, userI
       onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
       <div ref={trackRef} style={{ display: "flex", gap: 16, width: "max-content", padding: "0 16px", position: "relative", zIndex: 1 }}>
         {doubled.map((post, i) => (
-          <PlateCard key={`${post.id}-${i}`} post={post} isLiked={likedIds.has(post.id)} onLike={onLike} onUnlike={onUnlike} onOpenComments={onOpenComments} userId={userId} />
+          <PlateCard key={`${post.id}-${i}`} post={post} isLiked={likedIds.has(post.id)} onLike={onLike} onUnlike={onUnlike} onOpenComments={onOpenComments} userId={userId} onDelete={onDelete} />
         ))}
       </div>
       <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 80, background: "linear-gradient(90deg, #0a0a12, transparent)", zIndex: 2, pointerEvents: "none" }} />
@@ -858,6 +910,11 @@ export default function App() {
     setCommentPost(post);
   }, []);
 
+  const handleDeletePost = useCallback((id: number) => {
+    setPosts((prev) => prev.filter((p) => p.id !== id));
+    setLikedIds((prev) => { const n = new Set(prev); n.delete(id); return n; });
+  }, []);
+
   const handleChangePage = (page: NavPage) => {
     if (page === "settings") { setShowSettings(true); return; }
     setActivePage(page);
@@ -966,6 +1023,7 @@ export default function App() {
                         onOpenComments={handleOpenComments}
                         onAddToBucket={(p) => setBucketTarget(p)}
                         userId={userId}
+                        onDelete={handleDeletePost}
                       />
                     ))}
                   </div>
@@ -1043,12 +1101,12 @@ export default function App() {
                 <div style={{ padding: "12px 24px 4px", flexShrink: 0 }}>
                   <div style={{ color: "#333", fontSize: 11, letterSpacing: 2, fontFamily: "'Noto Sans JP', sans-serif" }}>━━ 皿が流れています。気に入ったら取ってください ━━</div>
                 </div>
-                <ConveyorBelt posts={filteredPosts} likedIds={likedIds} onLike={handleLike} onUnlike={handleUnlike} onOpenComments={handleOpenComments} userId={userId} />
+                <ConveyorBelt posts={filteredPosts} likedIds={likedIds} onLike={handleLike} onUnlike={handleUnlike} onOpenComments={handleOpenComments} userId={userId} onDelete={handleDeletePost} />
                 <div style={{ padding: "24px", borderTop: "1px solid #1a1a2a" }}>
                   <div style={{ color: "#333", fontSize: 11, letterSpacing: 2, fontFamily: "'Noto Sans JP', sans-serif", marginBottom: 16 }}>━━ 全ての皿 ━━</div>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 12 }}>
                     {filteredPosts.map((post) => (
-                      <PlateCard key={post.id} post={post} isLiked={likedIds.has(post.id)} onLike={handleLike} onUnlike={handleUnlike} onOpenComments={handleOpenComments} userId={userId} />
+                      <PlateCard key={post.id} post={post} isLiked={likedIds.has(post.id)} onLike={handleLike} onUnlike={handleUnlike} onOpenComments={handleOpenComments} userId={userId} onDelete={handleDeletePost} />
                     ))}
                   </div>
                 </div>
