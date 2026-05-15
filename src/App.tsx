@@ -704,6 +704,11 @@ function Sidebar({ categories, selected, onSelect, activePage, onChangePage }: {
             <span style={{ marginLeft: "auto", fontSize: 9, color: "#444", background: "rgba(255,255,255,0.04)", padding: "1px 5px", borderRadius: 4 }}>準備中</span>
           </div>
         ))}
+        <div onClick={() => onChangePage("settings")} style={{ padding: "9px 16px", display: "flex", alignItems: "center", gap: 8, cursor: "pointer", color: activePage === "settings" ? "#c0392b" : "#555", fontSize: 13, fontFamily: "'Noto Sans JP', sans-serif", fontWeight: 600, background: activePage === "settings" ? "rgba(192,57,43,0.08)" : "transparent", transition: "all 0.2s" }}
+          onMouseEnter={(e) => { if (activePage !== "settings") e.currentTarget.style.color = "#aaa"; }}
+          onMouseLeave={(e) => { if (activePage !== "settings") e.currentTarget.style.color = "#555"; }}>
+          <span>⚙️</span><span>設定</span>
+        </div>
       </div>
 
       {/* Categories (ホームのみ) */}
@@ -732,14 +737,6 @@ function Sidebar({ categories, selected, onSelect, activePage, onChangePage }: {
         </div>
       )}
 
-      {/* Settings at bottom */}
-      <div style={{ borderTop: "1px solid #1a1a2a", padding: "8px 0", marginTop: "auto" }}>
-        <div onClick={() => onChangePage("settings")} style={{ padding: "9px 16px", display: "flex", alignItems: "center", gap: 8, cursor: "pointer", color: "#555", fontSize: 13, fontFamily: "'Noto Sans JP', sans-serif", fontWeight: 600, transition: "all 0.2s" }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = "#aaa")}
-          onMouseLeave={(e) => (e.currentTarget.style.color = "#555")}>
-          <span>⚙️</span><span>設定</span>
-        </div>
-      </div>
     </div>
   );
 }
