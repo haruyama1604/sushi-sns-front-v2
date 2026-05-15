@@ -406,9 +406,6 @@ function CommentModal({ post, onClose, likedIds, userId }: { post: Post; onClose
   const canComment = likedIds.has(post.id);
   const tier = TIER_CONFIG[post.tier];
 
-  // ダブルタップ検出用
-  const heartTimers = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
-  const heartCounts = useRef<Record<number, number>>({});
 
   const fetchComments = async () => {
     const data: Comment[] = await fetch(`${API_BASE}/posts/${post.id}/comments?user_id=${userId}`)
@@ -428,31 +425,23 @@ function CommentModal({ post, onClose, likedIds, userId }: { post: Post; onClose
   useEffect(() => { fetchComments(); }, [post.id]);
 
   const handleHeartClick = (commentId: number, isLiked: boolean) => {
-    heartCounts.current[commentId] = (heartCounts.current[commentId] ?? 0) + 1;
-    clearTimeout(heartTimers.current[commentId]);
-    heartTimers.current[commentId] = setTimeout(() => {
-      const count = heartCounts.current[commentId] ?? 0;
-      heartCounts.current[commentId] = 0;
-      if (count >= 2 && isLiked) {
-        // ダブルタップ → いいね取り消し
-        fetch(`${API_BASE}/comments/${commentId}/like`, {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ user_id: userId }),
-        }).then(() => {
-          setComments((prev) => prev.map((c) => c.id === commentId ? { ...c, likes: Math.max(0, c.likes - 1), liked_by_user: false } : c));
-        });
-      } else if (count === 1 && !isLiked) {
-        // シングルタップ → いいね
-        fetch(`${API_BASE}/comments/${commentId}/like`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ user_id: userId }),
-        }).then(() => {
-          setComments((prev) => prev.map((c) => c.id === commentId ? { ...c, likes: c.likes + 1, liked_by_user: true } : c));
-        });
-      }
-    }, 260);
+    if (isLiked) {
+      fetch(`${API_BASE}/comments/${commentId}/like`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: userId }),
+      }).then(() => {
+        setComments((prev) => prev.map((c) => c.id === commentId ? { ...c, likes: Math.max(0, c.likes - 1), liked_by_user: false } : c));
+      });
+    } else {
+      fetch(`${API_BASE}/comments/${commentId}/like`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: userId }),
+      }).then(() => {
+        setComments((prev) => prev.map((c) => c.id === commentId ? { ...c, likes: c.likes + 1, liked_by_user: true } : c));
+      });
+    }
   };
 
   const handleAddReply = async (commentId: number) => {
@@ -523,7 +512,7 @@ function CommentModal({ post, onClose, likedIds, userId }: { post: Post; onClose
                   <div style={{ display: "flex", gap: 12, marginTop: 5, paddingLeft: 4, alignItems: "center" }}>
                     <button
                       onClick={() => handleHeartClick(c.id, c.liked_by_user)}
-                      title={c.liked_by_user ? "ダブルタップで取り消し" : "いいね"}
+                      title={c.liked_by_user ? "タップで取り消し" : "いいね"}
                       style={{ background: "none", border: "none", cursor: "pointer", color: c.liked_by_user ? "#e74c3c" : "#555", fontSize: 12, fontFamily: "'Noto Sans JP', sans-serif", padding: 0, display: "flex", alignItems: "center", gap: 4, transition: "color 0.15s" }}>
                       {c.liked_by_user ? "❤️" : "🤍"} {c.likes}
                     </button>
