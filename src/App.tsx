@@ -230,7 +230,6 @@ function ConveyorBelt({ posts, likedIds, onLike, onUnlike, onOpenComments }: {
   return (
     <div style={{ position: "relative", overflow: "hidden", padding: "20px 0" }}
       onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
-      <div style={{ position: "absolute", top: "50%", left: 0, right: 0, height: 2, background: "linear-gradient(90deg, transparent, #333 10%, #333 90%, transparent)", zIndex: 0 }} />
       <div ref={trackRef} style={{ display: "flex", gap: 16, width: "max-content", padding: "0 16px", position: "relative", zIndex: 1 }}>
         {doubled.map((post, i) => (
           <PlateCard key={`${post.id}-${i}`} post={post} isLiked={likedIds.has(post.id)} onLike={onLike} onUnlike={onUnlike} onOpenComments={onOpenComments} />
