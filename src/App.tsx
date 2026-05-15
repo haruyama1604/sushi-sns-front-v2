@@ -282,23 +282,31 @@ function ConveyorBelt({ posts, likedIds, onLike, onUnlike, onOpenComments, userI
   forcePaused?: boolean;
   reducedMotion?: boolean;
 }) {
-  const trackRef = useRef<HTMLDivElement>(null);
+  const track1Ref = useRef<HTMLDivElement>(null);
+  const track2Ref = useRef<HTMLDivElement>(null);
   const [hoverPaused, setHoverPaused] = useState(false);
   const paused = hoverPaused || !!forcePaused;
-  const posRef = useRef(0);
+  const pos1Ref = useRef(0);
+  const pos2Ref = useRef(0);
   const rafRef = useRef<number>(0);
 
   useEffect(() => {
-    const track = trackRef.current;
-    if (!track) return;
-    const totalWidth = track.scrollWidth / 2;
+    const t1 = track1Ref.current;
+    const t2 = track2Ref.current;
+    if (!t1 || !t2) return;
     let last: number | null = null;
     const step = (ts: number) => {
       if (!last) last = ts;
       if (!paused) {
-        posRef.current += (ts - last) * 0.04;
-        if (posRef.current >= totalWidth) posRef.current -= totalWidth;
-        track.style.transform = `translateX(-${posRef.current}px)`;
+        const delta = (ts - last) * 0.04;
+        const total1 = t1.scrollWidth / 2;
+        const total2 = t2.scrollWidth / 2;
+        pos1Ref.current += delta;
+        if (pos1Ref.current >= total1) pos1Ref.current -= total1;
+        t1.style.transform = `translateX(-${pos1Ref.current}px)`;
+        pos2Ref.current += delta;
+        if (pos2Ref.current >= total2) pos2Ref.current -= total2;
+        t2.style.transform = `translateX(${pos2Ref.current - total2}px)`;
       }
       last = ts;
       rafRef.current = requestAnimationFrame(step);
@@ -312,10 +320,21 @@ function ConveyorBelt({ posts, likedIds, onLike, onUnlike, onOpenComments, userI
   return (
     <div style={{ position: "relative", overflow: "hidden", padding: "20px 0" }}
       onMouseEnter={() => setHoverPaused(true)} onMouseLeave={() => setHoverPaused(false)}>
-      <div ref={trackRef} style={{ display: "flex", gap: 16, width: "max-content", padding: "0 16px", position: "relative", zIndex: 1 }}>
-        {doubled.map((post, i) => (
-          <PlateCard key={`${post.id}-${i}`} post={post} isLiked={likedIds.has(post.id)} onLike={onLike} onUnlike={onUnlike} onOpenComments={onOpenComments} userId={userId} onDelete={onDelete} reducedMotion={reducedMotion} />
-        ))}
+      {/* レーン1: 右から左 */}
+      <div style={{ position: "relative", marginBottom: 16 }}>
+        <div ref={track1Ref} style={{ display: "flex", gap: 16, width: "max-content", padding: "0 16px" }}>
+          {doubled.map((post, i) => (
+            <PlateCard key={`l1-${post.id}-${i}`} post={post} isLiked={likedIds.has(post.id)} onLike={onLike} onUnlike={onUnlike} onOpenComments={onOpenComments} userId={userId} onDelete={onDelete} reducedMotion={reducedMotion} />
+          ))}
+        </div>
+      </div>
+      {/* レーン2: 左から右 */}
+      <div style={{ position: "relative" }}>
+        <div ref={track2Ref} style={{ display: "flex", gap: 16, width: "max-content", padding: "0 16px" }}>
+          {doubled.map((post, i) => (
+            <PlateCard key={`l2-${post.id}-${i}`} post={post} isLiked={likedIds.has(post.id)} onLike={onLike} onUnlike={onUnlike} onOpenComments={onOpenComments} userId={userId} onDelete={onDelete} reducedMotion={reducedMotion} />
+          ))}
+        </div>
       </div>
       <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 80, background: "linear-gradient(90deg, #0a0a12, transparent)", zIndex: 2, pointerEvents: "none" }} />
       <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: 80, background: "linear-gradient(-90deg, #0a0a12, transparent)", zIndex: 2, pointerEvents: "none" }} />
