@@ -1088,6 +1088,22 @@ export default function App() {
                   </div>
                 )}
               </div>
+
+              {/* 出した皿 */}
+              {(() => {
+                const myPosts = posts.filter((p) => p.user_id === userId);
+                if (myPosts.length === 0) return null;
+                return (
+                  <div style={{ marginTop: 36 }}>
+                    <div style={{ color: "#333", fontSize: 11, letterSpacing: 2, fontFamily: "'Noto Sans JP', sans-serif", marginBottom: 16 }}>━━ 出した皿 ━━</div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 12 }}>
+                      {myPosts.map((post) => (
+                        <PlateCard key={post.id} post={post} isLiked={likedIds.has(post.id)} onLike={handleLike} onUnlike={handleUnlike} onOpenComments={handleOpenComments} userId={userId} onDelete={handleDeletePost} />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
           ) : (
