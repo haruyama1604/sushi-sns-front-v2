@@ -498,10 +498,9 @@ function BucketSelectorModal({ post, buckets, userId, onClose, onBucketCreated, 
   );
 }
 
-function BucketDetailModal({ bucket, userId, allPosts, onClose }: {
+function BucketDetailModal({ bucket, userId, onClose }: {
   bucket: Bucket;
   userId: string;
-  allPosts: Post[];
   onClose: () => void;
 }) {
   const [bucketPosts, setBucketPosts] = useState<Post[]>([]);
@@ -939,7 +938,6 @@ export default function App() {
         <BucketDetailModal
           bucket={viewingBucket}
           userId={userId}
-          allPosts={posts}
           onClose={() => setViewingBucket(null)}
         />
       )}
