@@ -112,11 +112,13 @@ function PlateCard({
   onAddToBucket?: (post: Post) => void;
   userId?: string;
   onDelete?: (id: number) => void;
+  reducedMotion?: boolean;
 }) {
   const tier = TIER_CONFIG[post.tier];
   const [animating, setAnimating] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const isOwn = !!userId && post.user_id === userId;
+  const rm = !!reducedMotion;
 
   const handleLike = () => {
     if (isLiked) {
@@ -147,14 +149,16 @@ function PlateCard({
         overflow: "hidden",
         position: "relative",
         cursor: "pointer",
-        transition: "transform 0.2s, box-shadow 0.2s",
+        transition: rm ? "none" : "transform 0.2s, box-shadow 0.2s",
         flexShrink: 0,
       }}
       onMouseEnter={(e) => {
+        if (rm) return;
         e.currentTarget.style.transform = "translateY(-4px) scale(1.02)";
         e.currentTarget.style.boxShadow = `0 8px 32px ${tier.glow}55`;
       }}
       onMouseLeave={(e) => {
+        if (rm) return;
         e.currentTarget.style.transform = "";
         e.currentTarget.style.boxShadow = "";
       }}
@@ -240,7 +244,7 @@ function PlateCard({
         <div style={{ display: "flex", gap: 8 }}>
           <button
             onClick={handleLike}
-            style={{ flex: 1, padding: "8px 0", background: isLiked ? `${tier.bg}33` : "rgba(255,255,255,0.04)", border: `1px solid ${isLiked ? tier.glow : "#333"}`, borderRadius: 10, color: isLiked ? tier.glow : "#888", fontSize: 12, cursor: "pointer", fontFamily: "'Noto Sans JP', sans-serif", fontWeight: 600, transition: "all 0.3s", transform: animating ? "scale(1.1)" : "scale(1)" }}
+            style={{ flex: 1, padding: "8px 0", background: isLiked ? `${tier.bg}33` : "rgba(255,255,255,0.04)", border: `1px solid ${isLiked ? tier.glow : "#333"}`, borderRadius: 10, color: isLiked ? tier.glow : "#888", fontSize: 12, cursor: "pointer", fontFamily: "'Noto Sans JP', sans-serif", fontWeight: 600, transition: rm ? "none" : "all 0.3s", transform: (!rm && animating) ? "scale(1.1)" : "scale(1)" }}
           >
             {isLiked ? "✅" : "🍽"} {post.likes}
           </button>
@@ -565,7 +569,12 @@ function PostModal({ currentRoom, onClose, onPosted, userId }: { currentRoom: st
   );
 }
 
-function SettingsModal({ onClose }: { onClose: () => void }) {
+function SettingsModal({ onClose, reducedMotion, onToggleReducedMotion }: {
+  onClose: () => void;
+  reducedMotion: boolean;
+  onToggleReducedMotion: () => void;
+}) {
+  const pending = ["流れる速さの調節", "ダークモード切り替え", "SEのオン・オフ", "BGMのオン・オフ", "文字サイズの調節", "言語切り替え", "ネタバレ防止フィルター"];
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }} onClick={onClose}>
       <div style={{ background: "#0f0f1a", border: "1px solid #333", borderRadius: 20, width: "100%", maxWidth: 420, overflow: "hidden" }} onClick={(e) => e.stopPropagation()}>
@@ -574,15 +583,17 @@ function SettingsModal({ onClose }: { onClose: () => void }) {
           <button onClick={onClose} style={{ background: "none", border: "none", color: "#666", fontSize: 20, cursor: "pointer" }}>✕</button>
         </div>
         <div style={{ padding: 20 }}>
-          {[
-            "流れる速さの調節",
-            "ダークモード切り替え",
-            "SEのオン・オフ",
-            "BGMのオン・オフ",
-            "文字サイズの調節",
-            "言語切り替え",
-            "ネタバレ防止フィルター",
-          ].map((label) => (
+          {/* アニメーション簡略化（実装済み） */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: "1px solid #1a1a2a" }}>
+            <span style={{ color: "#e0e0e0", fontSize: 13, fontFamily: "'Noto Sans JP', sans-serif" }}>アニメーション簡略化</span>
+            <div
+              onClick={onToggleReducedMotion}
+              style={{ width: 44, height: 24, borderRadius: 12, background: reducedMotion ? "#c0392b" : "#2a2a3a", position: "relative", cursor: "pointer", transition: "background 0.2s", border: `1px solid ${reducedMotion ? "#e74c3c" : "#444"}` }}
+            >
+              <div style={{ position: "absolute", top: 3, left: reducedMotion ? 22 : 3, width: 16, height: 16, borderRadius: "50%", background: "#fff", transition: "left 0.2s" }} />
+            </div>
+          </div>
+          {pending.map((label) => (
             <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: "1px solid #1a1a2a" }}>
               <span style={{ color: "#888", fontSize: 13, fontFamily: "'Noto Sans JP', sans-serif" }}>{label}</span>
               <span style={{ color: "#555", fontSize: 11, fontFamily: "'Noto Sans JP', sans-serif" }}>🚧 準備中</span>
@@ -854,6 +865,7 @@ export default function App() {
   const [commentPost, setCommentPost] = useState<Post | null>(null);
   const [showPost, setShowPost] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
   const [activeTab, setActiveTab] = useState<"feed" | "room">("feed");
   const [activePage, setActivePage] = useState<NavPage>("home");
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -1037,6 +1049,7 @@ export default function App() {
                         onAddToBucket={(p) => setBucketTarget(p)}
                         userId={userId}
                         onDelete={handleDeletePost}
+                        reducedMotion={reducedMotion}
                       />
                     ))}
                   </div>
@@ -1108,7 +1121,7 @@ export default function App() {
                     <div style={{ color: "#333", fontSize: 11, letterSpacing: 2, fontFamily: "'Noto Sans JP', sans-serif", marginBottom: 16 }}>━━ 出した皿 ━━</div>
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 12 }}>
                       {myPosts.map((post) => (
-                        <PlateCard key={post.id} post={post} isLiked={likedIds.has(post.id)} onLike={handleLike} onUnlike={handleUnlike} onOpenComments={handleOpenComments} userId={userId} onDelete={handleDeletePost} />
+                        <PlateCard key={post.id} post={post} isLiked={likedIds.has(post.id)} onLike={handleLike} onUnlike={handleUnlike} onOpenComments={handleOpenComments} userId={userId} onDelete={handleDeletePost} reducedMotion={reducedMotion} />
                       ))}
                     </div>
                   </div>
@@ -1132,7 +1145,7 @@ export default function App() {
                   <div style={{ color: "#333", fontSize: 11, letterSpacing: 2, fontFamily: "'Noto Sans JP', sans-serif", marginBottom: 16 }}>━━ 全ての皿 ━━</div>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 12 }}>
                     {filteredPosts.map((post) => (
-                      <PlateCard key={post.id} post={post} isLiked={likedIds.has(post.id)} onLike={handleLike} onUnlike={handleUnlike} onOpenComments={handleOpenComments} userId={userId} onDelete={handleDeletePost} />
+                      <PlateCard key={post.id} post={post} isLiked={likedIds.has(post.id)} onLike={handleLike} onUnlike={handleUnlike} onOpenComments={handleOpenComments} userId={userId} onDelete={handleDeletePost} reducedMotion={reducedMotion} />
                     ))}
                   </div>
                 </div>
@@ -1148,7 +1161,7 @@ export default function App() {
       {/* Modals */}
       {commentPost && <CommentModal post={commentPost} onClose={() => setCommentPost(null)} likedIds={likedIds} userId={userId} />}
       {showPost && <PostModal currentRoom={selected?.room} onClose={() => setShowPost(false)} onPosted={fetchPosts} userId={userId} />}
-      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} reducedMotion={reducedMotion} onToggleReducedMotion={() => setReducedMotion((v) => !v)} />}
       {bucketTarget && (
         <BucketSelectorModal
           post={bucketTarget}
