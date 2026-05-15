@@ -103,6 +103,7 @@ function PlateCard({
   onAddToBucket,
   userId,
   onDelete,
+  reducedMotion,
 }: {
   post: Post;
   onLike: (id: number) => void;
