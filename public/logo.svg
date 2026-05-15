@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 48" width="160" height="48">
+  <defs>
+    <linearGradient id="rainbow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#ff6b6b"/>
+      <stop offset="25%"  stop-color="#ffd93d"/>
+      <stop offset="50%"  stop-color="#6bcb77"/>
+      <stop offset="75%"  stop-color="#4d96ff"/>
+      <stop offset="100%" stop-color="#c77dff"/>
+    </linearGradient>
+    <linearGradient id="plate" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%"   stop-color="#ff6b6b"/>
+      <stop offset="50%"  stop-color="#4d96ff"/>
+      <stop offset="100%" stop-color="#c77dff"/>
+    </linearGradient>
+    <linearGradient id="text-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%"   stop-color="#ff6b6b"/>
+      <stop offset="33%"  stop-color="#ffd93d"/>
+      <stop offset="66%"  stop-color="#4d96ff"/>
+      <stop offset="100%" stop-color="#c77dff"/>
+    </linearGradient>
+  </defs>
+
+  <!-- アイコン部分（左） -->
+  <!-- 皿 -->
+  <ellipse cx="26" cy="40" rx="18" ry="5" fill="url(#plate)" opacity="0.95"/>
+  <!-- シャリ -->
+  <ellipse cx="26" cy="31" rx="11" ry="7" fill="#f5f0e8"/>
+  <!-- ネタ -->
+  <ellipse cx="26" cy="25" rx="10" ry="4.5" fill="url(#rainbow)" opacity="0.9"/>
+  <!-- 光沢 -->
+  <ellipse cx="22" cy="23.5" rx="3" ry="1.2" fill="white" opacity="0.35"/>
+
+  <!-- テキスト部分（右） -->
+  <text
+    x="52"
+    y="30"
+    font-family="'Noto Sans JP', 'Hiragino Sans', sans-serif"
+    font-size="20"
+    font-weight="700"
+    fill="url(#text-grad)"
+  >あにすし</text>
+  <text
+    x="138"
+    y="22"
+    font-family="'Noto Sans JP', 'Hiragino Sans', sans-serif"
+    font-size="8"
+    font-weight="600"
+    fill="#888"
+  >β版</text>
+</svg>

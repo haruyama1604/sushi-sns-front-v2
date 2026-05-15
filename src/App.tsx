@@ -1,60 +1,43 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 
 // ============================================================
+// CONSTANTS
+// ============================================================
+const API_BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:3000";
+
+// ============================================================
 // TYPES
 // ============================================================
 type Room = string;
+type Sub = { id: string; label: string; icon: string; rooms: Room[] };
+type Category = { id: string; label: string; icon: string; subs: Sub[] };
+type Tier = "normal" | "silver" | "gold";
 
-type Sub = {
-  id: string;
-  label: string;
-  icon: string;
-  rooms: Room[];
-};
-
-type Category = {
-  id: string;
-  label: string;
-  icon: string;
-  subs: Sub[];
-};
-
-type PlateType = "normal" | "popular" | "legend";
-
-type PlateColor = {
-  bg: string;
-  label: string;
-  glow: string;
+type Post = {
+  id: number;
+  content: string;
+  likes: number;
+  views: number;
+  user_id: string;
+  room: string;
+  created_at: string;
+  tier: Tier;
 };
 
 type Comment = {
   id: number;
-  user: string;
-  avatar: string;
   text: string;
-  time: string;
+  user_id: string;
+  likes: number;
+  created_at: string;
 };
 
-type Post = {
-  id: number;
-  user: string;
-  avatar: string;
-  text: string;
-  stocks: number;
-  comments: Comment[];
-  timestamp: string;
-  room: string;
-  locked: boolean;
-};
+type Selected = { cat: Category; sub: Sub; room: string };
 
-type Selected = {
-  cat: Category;
-  sub: Sub;
-  room: string;
-};
+type NavPage = "home" | "collection" | "settings";
 
 // ============================================================
-// MOCK DATA
+// MOCK CATEGORIES (ルーム一覧はフロントで管理)
 // ============================================================
 const CATEGORIES: Category[] = [
   {
@@ -62,42 +45,9 @@ const CATEGORIES: Category[] = [
     label: "アニメ",
     icon: "📺",
     subs: [
-      {
-        id: "chainsaw",
-        label: "チェンソーマン",
-        icon: "🪚",
-        rooms: [
-          "キャラ考察",
-          "デンジ×パワー",
-          "藤本タツキ論",
-          "名シーン保管庫",
-          "アニメvs原作",
-        ],
-      },
-      {
-        id: "gundam",
-        label: "ガンダム",
-        icon: "🤖",
-        rooms: [
-          "シャア考察",
-          "MS設定談義",
-          "一年戦争",
-          "Gレコ再評価",
-          "富野監督語り場",
-        ],
-      },
-      {
-        id: "oshi",
-        label: "推しの子",
-        icon: "⭐",
-        rooms: [
-          "アイ伝説",
-          "ルビー応援",
-          "メタ構造考察",
-          "芸能界リアル談",
-          "最終回予測",
-        ],
-      },
+      { id: "chainsaw", label: "チェンソーマン", icon: "🪚", rooms: ["キャラ考察", "デンジ×パワー", "藤本タツキ論", "名シーン保管庫", "アニメvs原作"] },
+      { id: "gundam",   label: "ガンダム",       icon: "🤖", rooms: ["シャア考察", "MS設定談義", "一年戦争", "Gレコ再評価", "富野監督語り場"] },
+      { id: "oshi",     label: "推しの子",       icon: "⭐", rooms: ["アイ伝説", "ルビー応援", "メタ構造考察", "芸能界リアル談", "最終回予測"] },
     ],
   },
   {
@@ -105,30 +55,8 @@ const CATEGORIES: Category[] = [
     label: "漫画",
     icon: "📚",
     subs: [
-      {
-        id: "onepiece",
-        label: "ワンピース",
-        icon: "🏴‍☠️",
-        rooms: [
-          "最新話速報",
-          "伏線回収記録",
-          "悪魔の実図鑑",
-          "歴代名シーン",
-          "尾田栄一郎神話",
-        ],
-      },
-      {
-        id: "jjk",
-        label: "呪術廻戦",
-        icon: "🌀",
-        rooms: [
-          "術式考察",
-          "五条悟信仰",
-          "虎杖の正体",
-          "廻戦用語辞典",
-          "芥見構成論",
-        ],
-      },
+      { id: "onepiece", label: "ワンピース", icon: "🏴‍☠️", rooms: ["最新話速報", "伏線回収記録", "悪魔の実図鑑", "歴代名シーン", "尾田栄一郎神話"] },
+      { id: "jjk",      label: "呪術廻戦",  icon: "🌀",   rooms: ["術式考察", "五条悟信仰", "虎杖の正体", "廻戦用語辞典", "芥見構成論"] },
     ],
   },
   {
@@ -136,124 +64,32 @@ const CATEGORIES: Category[] = [
     label: "ゲーム",
     icon: "🎮",
     subs: [
-      {
-        id: "elden",
-        label: "エルデンリング",
-        icon: "🗡️",
-        rooms: [
-          "マリカ神話考察",
-          "ボス攻略",
-          "建築美術鑑賞",
-          "縛りプレイ記録",
-          "次回作予測",
-        ],
-      },
+      { id: "elden", label: "エルデンリング", icon: "🗡️", rooms: ["マリカ神話考察", "ボス攻略", "建築美術鑑賞", "縛りプレイ記録", "次回作予測"] },
     ],
   },
 ];
 
-const PLATE_COLORS: Record<PlateType, PlateColor> = {
-  normal:  { bg: "#c0392b", label: "赤皿", glow: "#e74c3c" },
-  popular: { bg: "#f39c12", label: "金皿", glow: "#f1c40f" },
-  legend:  { bg: "#8e44ad", label: "虹皿", glow: "#9b59b6" },
+// ============================================================
+// TIER CONFIG
+// ============================================================
+type TierConfig = { bg: string; border: string; glow: string; label: string; cardBg: string };
+
+const TIER_CONFIG: Record<Tier, TierConfig> = {
+  gold:   { bg: "#f39c12", border: "#f1c40f", glow: "#f1c40f", label: "✨ 金皿", cardBg: "rgba(243,156,18,0.08)" },
+  silver: { bg: "#95a5a6", border: "#bdc3c7", glow: "#bdc3c7", label: "🍽 銀皿", cardBg: "rgba(149,165,166,0.06)" },
+  normal: { bg: "#c0392b", border: "#e74c3c", glow: "#e74c3c", label: "🍽 赤皿", cardBg: "rgba(192,57,43,0.05)" },
 };
 
-function getPlateType(stocks: number): PlateType {
-  if (stocks >= 50) return "legend";
-  if (stocks >= 15) return "popular";
-  return "normal";
+// ============================================================
+// UUID HELPER
+// ============================================================
+function getOrCreateUserId(): string {
+  const stored = localStorage.getItem("anisushi_user_id");
+  if (stored) return stored;
+  const id = crypto.randomUUID();
+  localStorage.setItem("anisushi_user_id", id);
+  return id;
 }
-
-const MOCK_POSTS: Post[] = [
-  {
-    id: 1,
-    user: "名無しの考察師",
-    avatar: "🧠",
-    text: "チェンソーマンの「恐怖の悪魔」が最終ボスである根拠を整理した。マキマの目的は人間社会の「恐怖」を制御することで、全悪魔の頂点に君臨することだった。つまり物語全体が恐怖の生態系の話だ",
-    stocks: 72,
-    comments: [],
-    timestamp: "3時間前",
-    room: "チェンソーマン",
-    locked: true,
-  },
-  {
-    id: 2,
-    user: "デンジ派",
-    avatar: "🪚",
-    text: "デンジの「普通の幸せ」への渇望が物語の核心。幼少期の貧困と孤独が、彼の全ての行動原理になってる",
-    stocks: 31,
-    comments: [],
-    timestamp: "5時間前",
-    room: "チェンソーマン",
-    locked: true,
-  },
-  {
-    id: 3,
-    user: "ガンダム老兵",
-    avatar: "🤖",
-    text: "シャアは結局マザコンだったという結論に20年かけて辿り着いた。ララァへの感情もアムロへの執着も全部そこに収束する",
-    stocks: 88,
-    comments: [],
-    timestamp: "1日前",
-    room: "ガンダム",
-    locked: true,
-  },
-  {
-    id: 4,
-    user: "one_piece_fan",
-    avatar: "🏴‍☠️",
-    text: "ルフィの「Dの意志」の真相、ついに見えてきた気がする。ジョイボーイとの関係性が鍵になる",
-    stocks: 12,
-    comments: [],
-    timestamp: "2時間前",
-    room: "ワンピース",
-    locked: true,
-  },
-  {
-    id: 5,
-    user: "呪術師見習い",
-    avatar: "🌀",
-    text: "五条悟の封印シーン、あの瞬間の演出の密度が異常。芥見先生の「読者に情報を与えすぎない」哲学がここで最高到達点に達してる",
-    stocks: 44,
-    comments: [],
-    timestamp: "6時間前",
-    room: "呪術廻戦",
-    locked: true,
-  },
-  {
-    id: 6,
-    user: "エルデン廃人",
-    avatar: "🗡️",
-    text: "マリカとラダーンの関係性、考えれば考えるほど深い。星砕きの儀式の真の意味はエルデの法理への反逆だった",
-    stocks: 19,
-    comments: [],
-    timestamp: "4時間前",
-    room: "エルデンリング",
-    locked: true,
-  },
-  {
-    id: 7,
-    user: "アイ崇拝者",
-    avatar: "⭐",
-    text: "アイの「うそつき」発言の真意、読み返すたびに新しい解釈が生まれる。赤坂先生の言語設計は天才的",
-    stocks: 67,
-    comments: [],
-    timestamp: "8時間前",
-    room: "推しの子",
-    locked: true,
-  },
-  {
-    id: 8,
-    user: "藤本論者",
-    avatar: "🔥",
-    text: "藤本タツキの絵柄の変遷を初期読み切りから追うと、「感情の解像度」が上がり続けてるのが分かる",
-    stocks: 23,
-    comments: [],
-    timestamp: "12時間前",
-    room: "チェンソーマン",
-    locked: true,
-  },
-];
 
 // ============================================================
 // COMPONENTS
@@ -261,24 +97,28 @@ const MOCK_POSTS: Post[] = [
 
 function PlateCard({
   post,
-  onStock,
+  onLike,
+  onUnlike,
   onOpenComments,
-  isStocked,
+  isLiked,
 }: {
   post: Post;
-  onStock: (id: number) => void;
+  onLike: (id: number) => void;
+  onUnlike: (id: number) => void;
   onOpenComments: (post: Post) => void;
-  isStocked: boolean;
+  isLiked: boolean;
 }) {
-  const type = getPlateType(post.stocks);
-  const plate = PLATE_COLORS[type];
+  const tier = TIER_CONFIG[post.tier];
   const [animating, setAnimating] = useState(false);
 
-  const handleStock = () => {
-    if (isStocked) return;
-    setAnimating(true);
-    setTimeout(() => setAnimating(false), 600);
-    onStock(post.id);
+  const handleLike = () => {
+    if (isLiked) {
+      onUnlike(post.id);
+    } else {
+      setAnimating(true);
+      setTimeout(() => setAnimating(false), 600);
+      onLike(post.id);
+    }
   };
 
   return (
@@ -286,8 +126,8 @@ function PlateCard({
       style={{
         minWidth: 280,
         maxWidth: 280,
-        background: "rgba(15,15,25,0.95)",
-        border: `1.5px solid ${plate.glow}44`,
+        background: tier.cardBg,
+        border: `1.5px solid ${tier.border}44`,
         borderRadius: 16,
         overflow: "hidden",
         position: "relative",
@@ -297,157 +137,56 @@ function PlateCard({
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.transform = "translateY(-4px) scale(1.02)";
-        e.currentTarget.style.boxShadow = `0 8px 32px ${plate.glow}55`;
+        e.currentTarget.style.boxShadow = `0 8px 32px ${tier.glow}55`;
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.transform = "";
         e.currentTarget.style.boxShadow = "";
       }}
     >
-      {/* Plate badge */}
-      <div
-        style={{
-          position: "absolute",
-          top: 10,
-          right: 10,
-          background: plate.bg,
-          color: "#fff",
-          fontSize: 11,
-          fontWeight: 700,
-          padding: "2px 8px",
-          borderRadius: 20,
-          fontFamily: "'Noto Sans JP', sans-serif",
-          boxShadow: `0 0 12px ${plate.glow}88`,
-          zIndex: 2,
-        }}
-      >
-        {type === "legend" ? "🌈 " : type === "popular" ? "✨ " : "🍽 "}
-        {plate.label}
+      {/* Tier badge */}
+      <div style={{ position: "absolute", top: 10, right: 10, background: tier.bg, color: "#fff", fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 20, fontFamily: "'Noto Sans JP', sans-serif", boxShadow: `0 0 12px ${tier.glow}88`, zIndex: 2 }}>
+        {tier.label}
       </div>
 
       {/* Room tag */}
-      <div
-        style={{
-          position: "absolute",
-          top: 10,
-          left: 10,
-          background: "rgba(255,255,255,0.08)",
-          color: "#aaa",
-          fontSize: 10,
-          padding: "2px 8px",
-          borderRadius: 20,
-          fontFamily: "'Noto Sans JP', sans-serif",
-          zIndex: 2,
-        }}
-      >
-        #{post.room}
+      <div style={{ position: "absolute", top: 10, left: 10, background: "rgba(255,255,255,0.08)", color: "#aaa", fontSize: 10, padding: "2px 8px", borderRadius: 20, fontFamily: "'Noto Sans JP', sans-serif", zIndex: 2 }}>
+        #{post.room || "フリー"}
       </div>
 
       {/* Content */}
       <div style={{ padding: "42px 16px 14px 16px" }}>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            marginBottom: 10,
-          }}
-        >
-          <div
-            style={{
-              fontSize: 28,
-              width: 40,
-              height: 40,
-              background: "rgba(255,255,255,0.05)",
-              borderRadius: "50%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              border: `1px solid ${plate.glow}33`,
-            }}
-          >
-            {post.avatar}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+          <div style={{ fontSize: 22, width: 40, height: 40, background: "rgba(255,255,255,0.05)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", border: `1px solid ${tier.border}33` }}>
+            🍣
           </div>
           <div>
-            <div
-              style={{
-                color: "#e0e0e0",
-                fontSize: 12,
-                fontWeight: 600,
-                fontFamily: "'Noto Sans JP', sans-serif",
-              }}
-            >
-              {post.user}
+            <div style={{ color: "#e0e0e0", fontSize: 12, fontWeight: 600, fontFamily: "'Noto Sans JP', sans-serif" }}>
+              {post.user_id === "system" ? "運営" : "名無しユーザー"}
             </div>
-            <div
-              style={{
-                color: "#555",
-                fontSize: 10,
-                fontFamily: "'Noto Sans JP', sans-serif",
-              }}
-            >
-              {post.timestamp}
+            <div style={{ color: "#555", fontSize: 10, fontFamily: "'Noto Sans JP', sans-serif" }}>
+              {post.created_at.slice(0, 16).replace("T", " ")}
             </div>
           </div>
         </div>
-        <p
-          style={{
-            color: "#d0d0d0",
-            fontSize: 13,
-            lineHeight: 1.7,
-            fontFamily: "'Noto Sans JP', sans-serif",
-            margin: 0,
-            marginBottom: 14,
-            display: "-webkit-box",
-            WebkitLineClamp: 4,
-            WebkitBoxOrient: "vertical",
-            overflow: "hidden",
-          }}
-        >
-          {post.text}
+
+        <p style={{ color: "#d0d0d0", fontSize: 13, lineHeight: 1.7, fontFamily: "'Noto Sans JP', sans-serif", margin: 0, marginBottom: 14, display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+          {post.content}
         </p>
 
         {/* Actions */}
         <div style={{ display: "flex", gap: 8 }}>
           <button
-            onClick={handleStock}
-            style={{
-              flex: 1,
-              padding: "8px 0",
-              background: isStocked
-                ? `${plate.bg}33`
-                : "rgba(255,255,255,0.04)",
-              border: `1px solid ${isStocked ? plate.glow : "#333"}`,
-              borderRadius: 10,
-              color: isStocked ? plate.glow : "#888",
-              fontSize: 12,
-              cursor: isStocked ? "default" : "pointer",
-              fontFamily: "'Noto Sans JP', sans-serif",
-              fontWeight: 600,
-              transition: "all 0.3s",
-              transform: animating ? "scale(1.1)" : "scale(1)",
-            }}
+            onClick={handleLike}
+            style={{ flex: 1, padding: "8px 0", background: isLiked ? `${tier.bg}33` : "rgba(255,255,255,0.04)", border: `1px solid ${isLiked ? tier.glow : "#333"}`, borderRadius: 10, color: isLiked ? tier.glow : "#888", fontSize: 12, cursor: "pointer", fontFamily: "'Noto Sans JP', sans-serif", fontWeight: 600, transition: "all 0.3s", transform: animating ? "scale(1.1)" : "scale(1)" }}
           >
-            {isStocked ? "✅" : "🍽"} {post.stocks + (isStocked ? 1 : 0)}
+            {isLiked ? "✅" : "🍽"} {post.likes}
           </button>
           <button
             onClick={() => onOpenComments(post)}
-            style={{
-              flex: 1,
-              padding: "8px 0",
-              background: isStocked
-                ? "rgba(255,255,255,0.06)"
-                : "rgba(255,255,255,0.02)",
-              border: `1px solid ${isStocked ? "#444" : "#222"}`,
-              borderRadius: 10,
-              color: isStocked ? "#ccc" : "#444",
-              fontSize: 12,
-              cursor: isStocked ? "pointer" : "not-allowed",
-              fontFamily: "'Noto Sans JP', sans-serif",
-              transition: "all 0.3s",
-            }}
+            style={{ flex: 1, padding: "8px 0", background: isLiked ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.02)", border: `1px solid ${isLiked ? "#444" : "#222"}`, borderRadius: 10, color: isLiked ? "#ccc" : "#444", fontSize: 12, cursor: isLiked ? "pointer" : "not-allowed", fontFamily: "'Noto Sans JP', sans-serif", transition: "all 0.3s" }}
           >
-            {isStocked ? "💬 コメント" : "🔒 ロック"}
+            {isLiked ? "💬 コメント" : "🔒 ロック"}
           </button>
         </div>
       </div>
@@ -455,15 +194,11 @@ function PlateCard({
   );
 }
 
-function ConveyorBelt({
-  posts,
-  stockedIds,
-  onStock,
-  onOpenComments,
-}: {
+function ConveyorBelt({ posts, likedIds, onLike, onUnlike, onOpenComments }: {
   posts: Post[];
-  stockedIds: Set<number>;
-  onStock: (id: number) => void;
+  likedIds: Set<number>;
+  onLike: (id: number) => void;
+  onUnlike: (id: number) => void;
   onOpenComments: (post: Post) => void;
 }) {
   const trackRef = useRef<HTMLDivElement>(null);
@@ -476,7 +211,6 @@ function ConveyorBelt({
     if (!track) return;
     const totalWidth = track.scrollWidth / 2;
     let last: number | null = null;
-
     const step = (ts: number) => {
       if (!last) last = ts;
       if (!paused) {
@@ -494,452 +228,138 @@ function ConveyorBelt({
   const doubled = [...posts, ...posts];
 
   return (
-    <div
-      style={{ position: "relative", overflow: "hidden", padding: "20px 0" }}
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-    >
-      {/* Track rail */}
-      <div
-        style={{
-          position: "absolute",
-          top: "50%",
-          left: 0,
-          right: 0,
-          height: 2,
-          background:
-            "linear-gradient(90deg, transparent, #333 10%, #333 90%, transparent)",
-          zIndex: 0,
-        }}
-      />
-      <div
-        ref={trackRef}
-        style={{
-          display: "flex",
-          gap: 16,
-          width: "max-content",
-          padding: "0 16px",
-          position: "relative",
-          zIndex: 1,
-        }}
-      >
+    <div style={{ position: "relative", overflow: "hidden", padding: "20px 0" }}
+      onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
+      <div style={{ position: "absolute", top: "50%", left: 0, right: 0, height: 2, background: "linear-gradient(90deg, transparent, #333 10%, #333 90%, transparent)", zIndex: 0 }} />
+      <div ref={trackRef} style={{ display: "flex", gap: 16, width: "max-content", padding: "0 16px", position: "relative", zIndex: 1 }}>
         {doubled.map((post, i) => (
-          <PlateCard
-            key={`${post.id}-${i}`}
-            post={post}
-            isStocked={stockedIds.has(post.id)}
-            onStock={onStock}
-            onOpenComments={onOpenComments}
-          />
+          <PlateCard key={`${post.id}-${i}`} post={post} isLiked={likedIds.has(post.id)} onLike={onLike} onUnlike={onUnlike} onOpenComments={onOpenComments} />
         ))}
       </div>
-      {/* Edge fades */}
-      <div
-        style={{
-          position: "absolute",
-          left: 0,
-          top: 0,
-          bottom: 0,
-          width: 80,
-          background: "linear-gradient(90deg, #0a0a12, transparent)",
-          zIndex: 2,
-          pointerEvents: "none",
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          right: 0,
-          top: 0,
-          bottom: 0,
-          width: 80,
-          background: "linear-gradient(-90deg, #0a0a12, transparent)",
-          zIndex: 2,
-          pointerEvents: "none",
-        }}
-      />
+      <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 80, background: "linear-gradient(90deg, #0a0a12, transparent)", zIndex: 2, pointerEvents: "none" }} />
+      <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: 80, background: "linear-gradient(-90deg, #0a0a12, transparent)", zIndex: 2, pointerEvents: "none" }} />
     </div>
   );
 }
 
-function CommentModal({
-  post,
-  onClose,
-}: {
-  post: Post;
-  onClose: () => void;
-  canComment: boolean;
-}) {
-  const [comments, setComments] = useState<Comment[]>([
-    {
-      id: 1,
-      user: "考察班A",
-      avatar: "🔬",
-      text: "これは目から鱗だった",
-      time: "1時間前",
-    },
-    {
-      id: 2,
-      user: "元祖名無し",
-      avatar: "👤",
-      text: "俺もそう思ってた！やっと言語化されたわ",
-      time: "2時間前",
-    },
-  ]);
+function CommentModal({ post, onClose, likedIds, userId }: { post: Post; onClose: () => void; likedIds: Set<number>; userId: string }) {
+  const [comments, setComments] = useState<Comment[]>([]);
   const [input, setInput] = useState("");
+  const canComment = likedIds.has(post.id);
+  const tier = TIER_CONFIG[post.tier];
 
-  const submit = () => {
+  useEffect(() => {
+    fetch(`${API_BASE}/posts/${post.id}/comments`)
+      .then((r) => r.json())
+      .then(setComments)
+      .catch(() => {});
+  }, [post.id]);
+
+  const submit = async () => {
     if (!input.trim()) return;
-    setComments((prev) => [
-      ...prev,
-      {
-        id: Date.now(),
-        user: "あなた",
-        avatar: "✨",
-        text: input.trim(),
-        time: "今",
-      },
-    ]);
+    await fetch(`${API_BASE}/posts/${post.id}/comments`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: input.trim(), user_id: userId }),
+    });
     setInput("");
+    fetch(`${API_BASE}/posts/${post.id}/comments`).then((r) => r.json()).then(setComments).catch(() => {});
   };
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,0.85)",
-        zIndex: 100,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 16,
-      }}
-      onClick={onClose}
-    >
-      <div
-        style={{
-          background: "#0f0f1a",
-          border: "1px solid #333",
-          borderRadius: 20,
-          width: "100%",
-          maxWidth: 520,
-          maxHeight: "80vh",
-          overflow: "hidden",
-          display: "flex",
-          flexDirection: "column",
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div
-          style={{
-            padding: "16px 20px",
-            borderBottom: "1px solid #222",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <span
-            style={{
-              color: "#e0e0e0",
-              fontFamily: "'Noto Sans JP', sans-serif",
-              fontSize: 14,
-              fontWeight: 700,
-            }}
-          >
-            💬 コメント欄 —{" "}
-            <span style={{ color: "#888", fontWeight: 400 }}>{post.room}</span>
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }} onClick={onClose}>
+      <div style={{ background: "#0f0f1a", border: "1px solid #333", borderRadius: 20, width: "100%", maxWidth: 520, maxHeight: "80vh", overflow: "hidden", display: "flex", flexDirection: "column" }} onClick={(e) => e.stopPropagation()}>
+        <div style={{ padding: "16px 20px", borderBottom: "1px solid #222", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span style={{ color: "#e0e0e0", fontFamily: "'Noto Sans JP', sans-serif", fontSize: 14, fontWeight: 700 }}>
+            💬 コメント欄 — <span style={{ color: "#888", fontWeight: 400 }}>{post.room || "フリー"}</span>
           </span>
-          <button
-            onClick={onClose}
-            style={{
-              background: "none",
-              border: "none",
-              color: "#666",
-              fontSize: 20,
-              cursor: "pointer",
-            }}
-          >
-            ✕
-          </button>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: "#666", fontSize: 20, cursor: "pointer" }}>✕</button>
         </div>
 
-        {/* Original post */}
-        <div
-          style={{
-            padding: "14px 20px",
-            background: "rgba(255,255,255,0.02)",
-            borderBottom: "1px solid #1a1a2a",
-          }}
-        >
-          <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-            <span style={{ fontSize: 22 }}>{post.avatar}</span>
-            <div>
-              <div
-                style={{
-                  color: "#888",
-                  fontSize: 11,
-                  fontFamily: "'Noto Sans JP', sans-serif",
-                  marginBottom: 4,
-                }}
-              >
-                {post.user} · {post.timestamp}
-              </div>
-              <p
-                style={{
-                  color: "#c0c0c0",
-                  fontSize: 13,
-                  lineHeight: 1.7,
-                  margin: 0,
-                  fontFamily: "'Noto Sans JP', sans-serif",
-                }}
-              >
-                {post.text}
-              </p>
-            </div>
-          </div>
+        <div style={{ padding: "14px 20px", background: "rgba(255,255,255,0.02)", borderBottom: "1px solid #1a1a2a" }}>
+          <p style={{ color: "#c0c0c0", fontSize: 13, lineHeight: 1.7, margin: 0, fontFamily: "'Noto Sans JP', sans-serif" }}>{post.content}</p>
         </div>
 
-        {/* Comments */}
         <div style={{ flex: 1, overflowY: "auto", padding: "12px 20px" }}>
+          {comments.length === 0 && (
+            <div style={{ color: "#444", fontSize: 12, fontFamily: "'Noto Sans JP', sans-serif", textAlign: "center", paddingTop: 20 }}>まだコメントはありません</div>
+          )}
           {comments.map((c) => (
-            <div
-              key={c.id}
-              style={{ display: "flex", gap: 10, marginBottom: 14 }}
-            >
-              <span style={{ fontSize: 18 }}>{c.avatar}</span>
-              <div
-                style={{
-                  background: "rgba(255,255,255,0.03)",
-                  borderRadius: 12,
-                  padding: "8px 12px",
-                  flex: 1,
-                  border: "1px solid #1f1f2f",
-                }}
-              >
-                <div
-                  style={{
-                    color: "#777",
-                    fontSize: 10,
-                    fontFamily: "'Noto Sans JP', sans-serif",
-                    marginBottom: 4,
-                  }}
-                >
-                  {c.user} · {c.time}
+            <div key={c.id} style={{ display: "flex", gap: 10, marginBottom: 14 }}>
+              <span style={{ fontSize: 18 }}>💬</span>
+              <div style={{ background: "rgba(255,255,255,0.03)", borderRadius: 12, padding: "8px 12px", flex: 1, border: "1px solid #1f1f2f" }}>
+                <div style={{ color: "#777", fontSize: 10, fontFamily: "'Noto Sans JP', sans-serif", marginBottom: 4 }}>
+                  {c.user_id === "system" ? "運営" : "ユーザー"} · {c.created_at.slice(0, 16).replace("T", " ")}
                 </div>
-                <p
-                  style={{
-                    color: "#bbb",
-                    fontSize: 13,
-                    margin: 0,
-                    fontFamily: "'Noto Sans JP', sans-serif",
-                    lineHeight: 1.6,
-                  }}
-                >
-                  {c.text}
-                </p>
+                <p style={{ color: "#bbb", fontSize: 13, margin: 0, fontFamily: "'Noto Sans JP', sans-serif", lineHeight: 1.6 }}>{c.text}</p>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Input */}
-        <div
-          style={{
-            padding: "12px 20px",
-            borderTop: "1px solid #222",
-            display: "flex",
-            gap: 8,
-          }}
-        >
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value.slice(0, 80))}
-            onKeyDown={(e) => e.key === "Enter" && submit()}
-            placeholder="コメント（80字まで）"
-            style={{
-              flex: 1,
-              background: "rgba(255,255,255,0.04)",
-              border: "1px solid #333",
-              borderRadius: 10,
-              padding: "10px 14px",
-              color: "#e0e0e0",
-              fontFamily: "'Noto Sans JP', sans-serif",
-              fontSize: 13,
-              outline: "none",
-            }}
-          />
-          <button
-            onClick={submit}
-            style={{
-              padding: "10px 16px",
-              background: "#c0392b",
-              border: "none",
-              borderRadius: 10,
-              color: "#fff",
-              cursor: "pointer",
-              fontWeight: 700,
-              fontSize: 13,
-              fontFamily: "'Noto Sans JP', sans-serif",
-            }}
-          >
-            送信
-          </button>
-        </div>
+        {canComment ? (
+          <div style={{ padding: "12px 20px", borderTop: "1px solid #222", display: "flex", gap: 8 }}>
+            <input
+              value={input}
+              onChange={(e) => setInput(e.target.value.slice(0, 80))}
+              onKeyDown={(e) => e.key === "Enter" && submit()}
+              placeholder="コメント（80字まで）"
+              style={{ flex: 1, background: "rgba(255,255,255,0.04)", border: "1px solid #333", borderRadius: 10, padding: "10px 14px", color: "#e0e0e0", fontFamily: "'Noto Sans JP', sans-serif", fontSize: 13, outline: "none" }}
+            />
+            <button onClick={submit} style={{ padding: "10px 16px", background: tier.bg, border: "none", borderRadius: 10, color: "#fff", cursor: "pointer", fontWeight: 700, fontSize: 13, fontFamily: "'Noto Sans JP', sans-serif" }}>送信</button>
+          </div>
+        ) : (
+          <div style={{ padding: "12px 20px", borderTop: "1px solid #222", textAlign: "center", color: "#444", fontSize: 12, fontFamily: "'Noto Sans JP', sans-serif" }}>
+            🔒 先に皿を取るとコメントできます
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-function PostModal({
-  currentRoom,
-  onClose,
-  onPost,
-}: {
-  currentRoom: string | undefined;
-  onClose: () => void;
-  onPost: (text: string) => void;
-}) {
+function PostModal({ currentRoom, onClose, onPosted, userId }: { currentRoom: string | undefined; onClose: () => void; onPosted: () => void; userId: string }) {
   const [text, setText] = useState("");
   const MAX = 80;
 
+  const submit = async () => {
+    if (!text.trim()) return;
+    await fetch(`${API_BASE}/posts`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content: text.trim(), user_id: userId, room: currentRoom || "" }),
+    });
+    onPosted();
+    onClose();
+  };
+
   return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,0.85)",
-        zIndex: 100,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 16,
-      }}
-      onClick={onClose}
-    >
-      <div
-        style={{
-          background: "#0f0f1a",
-          border: "1px solid #444",
-          borderRadius: 20,
-          width: "100%",
-          maxWidth: 480,
-          overflow: "hidden",
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div
-          style={{
-            padding: "16px 20px",
-            borderBottom: "1px solid #222",
-            display: "flex",
-            justifyContent: "space-between",
-          }}
-        >
-          <span
-            style={{
-              color: "#e0e0e0",
-              fontFamily: "'Noto Sans JP', sans-serif",
-              fontSize: 14,
-              fontWeight: 700,
-            }}
-          >
-            🍽 皿に乗せる —{" "}
-            <span style={{ color: "#c0392b" }}>
-              #{currentRoom || "ルームを選択"}
-            </span>
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }} onClick={onClose}>
+      <div style={{ background: "#0f0f1a", border: "1px solid #444", borderRadius: 20, width: "100%", maxWidth: 480, overflow: "hidden" }} onClick={(e) => e.stopPropagation()}>
+        <div style={{ padding: "16px 20px", borderBottom: "1px solid #222", display: "flex", justifyContent: "space-between" }}>
+          <span style={{ color: "#e0e0e0", fontFamily: "'Noto Sans JP', sans-serif", fontSize: 14, fontWeight: 700 }}>
+            🍽 皿に乗せる — <span style={{ color: "#c0392b" }}>#{currentRoom || "ルームを選択"}</span>
           </span>
-          <button
-            onClick={onClose}
-            style={{
-              background: "none",
-              border: "none",
-              color: "#666",
-              fontSize: 20,
-              cursor: "pointer",
-            }}
-          >
-            ✕
-          </button>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: "#666", fontSize: 20, cursor: "pointer" }}>✕</button>
         </div>
         <div style={{ padding: 20 }}>
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value.slice(0, MAX))}
-            placeholder={`${
-              currentRoom || "このルーム"
-            }への投稿（${MAX}字まで）\n刺激的な考察・感想・発見を...`}
-            style={{
-              width: "100%",
-              height: 120,
-              background: "rgba(255,255,255,0.04)",
-              border: "1px solid #333",
-              borderRadius: 12,
-              padding: "12px 14px",
-              color: "#e0e0e0",
-              fontFamily: "'Noto Sans JP', sans-serif",
-              fontSize: 14,
-              outline: "none",
-              resize: "none",
-              lineHeight: 1.7,
-              boxSizing: "border-box",
-            }}
+            placeholder={`${currentRoom || "このルーム"}への投稿（${MAX}字まで）\n刺激的な考察・感想・発見を...`}
+            style={{ width: "100%", height: 120, background: "rgba(255,255,255,0.04)", border: "1px solid #333", borderRadius: 12, padding: "12px 14px", color: "#e0e0e0", fontFamily: "'Noto Sans JP', sans-serif", fontSize: 14, outline: "none", resize: "none", lineHeight: 1.7, boxSizing: "border-box" }}
           />
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginTop: 12,
-            }}
-          >
-            <div
-              style={{
-                color: text.length > MAX * 0.85 ? "#e74c3c" : "#555",
-                fontSize: 12,
-                fontFamily: "'Noto Sans JP', sans-serif",
-              }}
-            >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 12 }}>
+            <div style={{ color: text.length > MAX * 0.85 ? "#e74c3c" : "#555", fontSize: 12, fontFamily: "'Noto Sans JP', sans-serif" }}>
               {text.length} / {MAX}
             </div>
-            <div style={{ display: "flex", gap: 8 }}>
-              <button
-                style={{
-                  padding: "8px 14px",
-                  background: "rgba(255,255,255,0.04)",
-                  border: "1px solid #333",
-                  borderRadius: 8,
-                  color: "#888",
-                  cursor: "pointer",
-                  fontSize: 12,
-                  fontFamily: "'Noto Sans JP', sans-serif",
-                }}
-              >
-                𝕏 同時投稿
-              </button>
-              <button
-                onClick={() => {
-                  onPost(text);
-                  onClose();
-                }}
-                disabled={!text.trim()}
-                style={{
-                  padding: "8px 20px",
-                  background: text.trim() ? "#c0392b" : "#333",
-                  border: "none",
-                  borderRadius: 8,
-                  color: text.trim() ? "#fff" : "#555",
-                  cursor: text.trim() ? "pointer" : "not-allowed",
-                  fontSize: 13,
-                  fontFamily: "'Noto Sans JP', sans-serif",
-                  fontWeight: 700,
-                }}
-              >
-                投稿する
-              </button>
-            </div>
+            <button
+              onClick={submit}
+              disabled={!text.trim()}
+              style={{ padding: "8px 20px", background: text.trim() ? "#c0392b" : "#333", border: "none", borderRadius: 8, color: text.trim() ? "#fff" : "#555", cursor: text.trim() ? "pointer" : "not-allowed", fontSize: 13, fontFamily: "'Noto Sans JP', sans-serif", fontWeight: 700 }}
+            >
+              投稿する
+            </button>
           </div>
         </div>
       </div>
@@ -947,231 +367,138 @@ function PostModal({
   );
 }
 
-function Sidebar({
-  categories,
-  selected,
-  onSelect,
-}: {
+function SettingsModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }} onClick={onClose}>
+      <div style={{ background: "#0f0f1a", border: "1px solid #333", borderRadius: 20, width: "100%", maxWidth: 420, overflow: "hidden" }} onClick={(e) => e.stopPropagation()}>
+        <div style={{ padding: "16px 20px", borderBottom: "1px solid #222", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span style={{ color: "#e0e0e0", fontFamily: "'Noto Sans JP', sans-serif", fontSize: 14, fontWeight: 700 }}>⚙️ 設定</span>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: "#666", fontSize: 20, cursor: "pointer" }}>✕</button>
+        </div>
+        <div style={{ padding: 20 }}>
+          {[
+            "流れる速さの調節",
+            "ダークモード切り替え",
+            "SEのオン・オフ",
+            "BGMのオン・オフ",
+            "文字サイズの調節",
+            "言語切り替え",
+            "ネタバレ防止フィルター",
+          ].map((label) => (
+            <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: "1px solid #1a1a2a" }}>
+              <span style={{ color: "#888", fontSize: 13, fontFamily: "'Noto Sans JP', sans-serif" }}>{label}</span>
+              <span style={{ color: "#555", fontSize: 11, fontFamily: "'Noto Sans JP', sans-serif" }}>🚧 準備中</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Sidebar({ categories, selected, onSelect, activePage, onChangePage }: {
   categories: Category[];
   selected: Selected | null;
   onSelect: (s: Selected) => void;
+  activePage: NavPage;
+  onChangePage: (p: NavPage) => void;
 }) {
   const [expanded, setExpanded] = useState<string | null>("anime");
 
   return (
-    <div
-      style={{
-        width: 220,
-        background: "rgba(8,8,18,0.98)",
-        borderRight: "1px solid #1a1a2a",
-        height: "100%",
-        overflowY: "auto",
-        flexShrink: 0,
-      }}
-    >
-      <div
-        style={{ padding: "20px 16px 12px", borderBottom: "1px solid #1a1a2a" }}
-      >
-        <div
-          style={{
-            fontSize: 22,
-            fontWeight: 900,
-            fontFamily: "'Noto Serif JP', serif",
-            letterSpacing: "-0.5px",
-          }}
-        >
-          <span style={{ color: "#c0392b" }}>回転</span>
-          <span style={{ color: "#e0e0e0" }}>SNS</span>
-        </div>
-        <div
-          style={{
-            color: "#444",
-            fontSize: 10,
-            fontFamily: "'Noto Sans JP', sans-serif",
-            marginTop: 2,
-          }}
-        >
-          β版 · オタク専用深層
-        </div>
+    <div style={{ width: 220, background: "rgba(8,8,18,0.98)", borderRight: "1px solid #1a1a2a", height: "100%", overflowY: "auto", flexShrink: 0, display: "flex", flexDirection: "column" }}>
+      {/* Logo */}
+      <div style={{ padding: "16px 16px 12px", borderBottom: "1px solid #1a1a2a", cursor: "pointer" }} onClick={() => onChangePage("home")}>
+        <img src="/logo.svg" alt="あにすし" style={{ height: 40 }} />
       </div>
 
-      <div style={{ padding: "8px 0" }}>
-        {categories.map((cat) => (
-          <div key={cat.id}>
-            <div
-              onClick={() => setExpanded(expanded === cat.id ? null : cat.id)}
-              style={{
-                padding: "10px 16px",
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                cursor: "pointer",
-                color: expanded === cat.id ? "#e0e0e0" : "#666",
-                fontSize: 13,
-                fontFamily: "'Noto Sans JP', sans-serif",
-                fontWeight: 700,
-                background:
-                  expanded === cat.id
-                    ? "rgba(255,255,255,0.04)"
-                    : "transparent",
-                transition: "all 0.2s",
-              }}
-            >
-              <span>{cat.icon}</span>
-              <span>{cat.label}</span>
-              <span style={{ marginLeft: "auto", fontSize: 10, color: "#444" }}>
-                {expanded === cat.id ? "▼" : "▶"}
-              </span>
-            </div>
-            {expanded === cat.id &&
-              cat.subs.map((sub) => (
+      {/* Nav */}
+      <div style={{ borderBottom: "1px solid #1a1a2a", padding: "8px 0" }}>
+        {([
+          ["home",       "🏠", "ホーム"],
+          ["collection", "📦", "コレクション"],
+        ] as [NavPage, string, string][]).map(([page, icon, label]) => (
+          <div key={page} onClick={() => onChangePage(page)} style={{ padding: "9px 16px", display: "flex", alignItems: "center", gap: 8, cursor: "pointer", color: activePage === page ? "#c0392b" : "#555", fontSize: 13, fontFamily: "'Noto Sans JP', sans-serif", fontWeight: 600, background: activePage === page ? "rgba(192,57,43,0.08)" : "transparent", transition: "all 0.2s" }}>
+            <span>{icon}</span><span>{label}</span>
+          </div>
+        ))}
+        {(["👤 プロフィール", "🔔 通知"] as string[]).map((item) => (
+          <div key={item} style={{ padding: "9px 16px", display: "flex", alignItems: "center", gap: 8, cursor: "not-allowed", color: "#333", fontSize: 13, fontFamily: "'Noto Sans JP', sans-serif" }}>
+            <span>{item}</span>
+            <span style={{ marginLeft: "auto", fontSize: 9, color: "#444", background: "rgba(255,255,255,0.04)", padding: "1px 5px", borderRadius: 4 }}>準備中</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Categories (ホームのみ) */}
+      {activePage === "home" && (
+        <div style={{ flex: 1, overflowY: "auto", padding: "8px 0" }}>
+          {categories.map((cat) => (
+            <div key={cat.id}>
+              <div onClick={() => setExpanded(expanded === cat.id ? null : cat.id)} style={{ padding: "10px 16px", display: "flex", alignItems: "center", gap: 8, cursor: "pointer", color: expanded === cat.id ? "#e0e0e0" : "#666", fontSize: 13, fontFamily: "'Noto Sans JP', sans-serif", fontWeight: 700, background: expanded === cat.id ? "rgba(255,255,255,0.04)" : "transparent", transition: "all 0.2s" }}>
+                <span>{cat.icon}</span><span>{cat.label}</span>
+                <span style={{ marginLeft: "auto", fontSize: 10, color: "#444" }}>{expanded === cat.id ? "▼" : "▶"}</span>
+              </div>
+              {expanded === cat.id && cat.subs.map((sub) => (
                 <div key={sub.id}>
-                  <div
-                    onClick={() => onSelect({ cat, sub, room: sub.rooms[0] })}
-                    style={{
-                      padding: "8px 16px 8px 32px",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
-                      cursor: "pointer",
-                      color: selected?.sub?.id === sub.id ? "#c0392b" : "#555",
-                      fontSize: 12,
-                      fontFamily: "'Noto Sans JP', sans-serif",
-                      fontWeight: 600,
-                      background:
-                        selected?.sub?.id === sub.id
-                          ? "rgba(192,57,43,0.08)"
-                          : "transparent",
-                      transition: "all 0.15s",
-                    }}
-                  >
-                    <span style={{ fontSize: 14 }}>{sub.icon}</span>
-                    <span>{sub.label}</span>
+                  <div onClick={() => onSelect({ cat, sub, room: sub.rooms[0] })} style={{ padding: "8px 16px 8px 32px", display: "flex", alignItems: "center", gap: 6, cursor: "pointer", color: selected?.sub?.id === sub.id ? "#c0392b" : "#555", fontSize: 12, fontFamily: "'Noto Sans JP', sans-serif", fontWeight: 600, background: selected?.sub?.id === sub.id ? "rgba(192,57,43,0.08)" : "transparent", transition: "all 0.15s" }}>
+                    <span style={{ fontSize: 14 }}>{sub.icon}</span><span>{sub.label}</span>
                   </div>
-                  {selected?.sub?.id === sub.id &&
-                    sub.rooms.map((room) => (
-                      <div
-                        key={room}
-                        onClick={() => onSelect({ cat, sub, room })}
-                        style={{
-                          padding: "6px 16px 6px 48px",
-                          cursor: "pointer",
-                          color: selected?.room === room ? "#e0e0e0" : "#444",
-                          fontSize: 11,
-                          fontFamily: "'Noto Sans JP', sans-serif",
-                          background:
-                            selected?.room === room
-                              ? "rgba(255,255,255,0.03)"
-                              : "transparent",
-                          borderLeft:
-                            selected?.room === room
-                              ? "2px solid #c0392b"
-                              : "2px solid transparent",
-                          transition: "all 0.15s",
-                        }}
-                      >
-                        #{room}
-                      </div>
-                    ))}
+                  {selected?.sub?.id === sub.id && sub.rooms.map((room) => (
+                    <div key={room} onClick={() => onSelect({ cat, sub, room })} style={{ padding: "6px 16px 6px 48px", cursor: "pointer", color: selected?.room === room ? "#e0e0e0" : "#444", fontSize: 11, fontFamily: "'Noto Sans JP', sans-serif", background: selected?.room === room ? "rgba(255,255,255,0.03)" : "transparent", borderLeft: selected?.room === room ? "2px solid #c0392b" : "2px solid transparent", transition: "all 0.15s" }}>
+                      #{room}
+                    </div>
+                  ))}
                 </div>
               ))}
-          </div>
-        ))}
-      </div>
+            </div>
+          ))}
+        </div>
+      )}
 
-      {/* Navigation */}
-      <div style={{ borderTop: "1px solid #1a1a2a", padding: "12px 0" }}>
-        {(
-          [
-            ["🏠", "ホーム"],
-            ["📦", "コレクション"],
-            ["👤", "プロフィール"],
-            ["🔔", "通知"],
-            ["⚙️", "設定"],
-          ] as [string, string][]
-        ).map(([icon, label]) => (
-          <div
-            key={label}
-            style={{
-              padding: "9px 16px",
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              cursor: "pointer",
-              color: "#555",
-              fontSize: 12,
-              fontFamily: "'Noto Sans JP', sans-serif",
-              transition: "color 0.2s",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = "#aaa")}
-            onMouseLeave={(e) => (e.currentTarget.style.color = "#555")}
-          >
-            <span>{icon}</span>
-            <span>{label}</span>
-          </div>
-        ))}
+      {/* Settings at bottom */}
+      <div style={{ borderTop: "1px solid #1a1a2a", padding: "8px 0", marginTop: "auto" }}>
+        <div onClick={() => onChangePage("settings")} style={{ padding: "9px 16px", display: "flex", alignItems: "center", gap: 8, cursor: "pointer", color: "#555", fontSize: 13, fontFamily: "'Noto Sans JP', sans-serif", fontWeight: 600, transition: "all 0.2s" }}
+          onMouseEnter={(e) => (e.currentTarget.style.color = "#aaa")}
+          onMouseLeave={(e) => (e.currentTarget.style.color = "#555")}>
+          <span>⚙️</span><span>設定</span>
+        </div>
       </div>
     </div>
   );
 }
 
-function StatsBar({
-  posts,
-  stockedIds,
-}: {
-  posts: Post[];
-  stockedIds: Set<number>;
-}) {
-  const stockedPosts = posts.filter((p) => stockedIds.has(p.id));
-  const legendCount = posts.filter(
-    (p) => getPlateType(p.stocks) === "legend"
-  ).length;
+function BottomNav({ activePage, onChangePage }: { activePage: NavPage; onChangePage: (p: NavPage) => void }) {
   return (
-    <div
-      style={{
-        display: "flex",
-        gap: 0,
-        borderBottom: "1px solid #1a1a2a",
-        background: "rgba(5,5,12,0.9)",
-      }}
-    >
-      {(
-        [
-          ["🍽", "総皿数", posts.length],
-          ["✅", "取った皿", stockedIds.size],
-          ["🌈", "殿堂入り", legendCount],
-          ["🔒", "解錠済み", stockedPosts.length],
-        ] as [string, string, number][]
-      ).map(([icon, label, val]) => (
-        <div
-          key={label}
-          style={{
-            flex: 1,
-            padding: "10px 0",
-            textAlign: "center",
-            borderRight: "1px solid #1a1a2a",
-          }}
-        >
+    <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "rgba(8,8,18,0.98)", borderTop: "1px solid #1a1a2a", display: "flex", zIndex: 50 }}>
+      {([
+        ["home",       "🏠", "ホーム"],
+        ["collection", "📦", "コレクション"],
+        ["settings",   "⚙️", "設定"],
+      ] as [NavPage, string, string][]).map(([page, icon, label]) => (
+        <div key={page} onClick={() => onChangePage(page)} style={{ flex: 1, padding: "10px 0 8px", display: "flex", flexDirection: "column", alignItems: "center", gap: 3, cursor: "pointer", color: activePage === page ? "#c0392b" : "#444" }}>
+          <span style={{ fontSize: 20 }}>{icon}</span>
+          <span style={{ fontSize: 9, fontFamily: "'Noto Sans JP', sans-serif" }}>{label}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function StatsBar({ posts, likedIds }: { posts: Post[]; likedIds: Set<number> }) {
+  const goldCount = posts.filter((p) => p.tier === "gold").length;
+  return (
+    <div style={{ display: "flex", gap: 0, borderBottom: "1px solid #1a1a2a", background: "rgba(5,5,12,0.9)" }}>
+      {([
+        ["🍽", "総皿数",   posts.length],
+        ["✅", "取った皿", likedIds.size],
+        ["✨", "金皿",     goldCount],
+        ["🔒", "解錠済み", likedIds.size],
+      ] as [string, string, number][]).map(([icon, label, val]) => (
+        <div key={label} style={{ flex: 1, padding: "10px 0", textAlign: "center", borderRight: "1px solid #1a1a2a" }}>
           <div style={{ fontSize: 16 }}>{icon}</div>
-          <div
-            style={{
-              color: "#e0e0e0",
-              fontSize: 15,
-              fontWeight: 700,
-              fontFamily: "'Noto Serif JP', serif",
-            }}
-          >
-            {val}
-          </div>
-          <div
-            style={{
-              color: "#444",
-              fontSize: 10,
-              fontFamily: "'Noto Sans JP', sans-serif",
-            }}
-          >
-            {label}
-          </div>
+          <div style={{ color: "#e0e0e0", fontSize: 15, fontWeight: 700, fontFamily: "'Noto Serif JP', serif" }}>{val}</div>
+          <div style={{ color: "#444", fontSize: 10, fontFamily: "'Noto Sans JP', sans-serif" }}>{label}</div>
         </div>
       ))}
     </div>
@@ -1182,265 +509,135 @@ function StatsBar({
 // MAIN APP
 // ============================================================
 export default function App() {
-  const [selected, setSelected] = useState<Selected>({
-    cat: CATEGORIES[0],
-    sub: CATEGORIES[0].subs[0],
-    room: CATEGORIES[0].subs[0].rooms[0],
-  });
-  const [posts, setPosts] = useState<Post[]>(MOCK_POSTS);
-  const [stockedIds, setStockedIds] = useState<Set<number>>(new Set());
+  const [userId] = useState(() => getOrCreateUserId());
+  const [selected, setSelected] = useState<Selected>({ cat: CATEGORIES[0], sub: CATEGORIES[0].subs[0], room: CATEGORIES[0].subs[0].rooms[0] });
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [likedIds, setLikedIds] = useState<Set<number>>(new Set());
   const [commentPost, setCommentPost] = useState<Post | null>(null);
   const [showPost, setShowPost] = useState(false);
-  const [activeTab, setActiveTab] = useState("feed"); // feed | collection | room
+  const [showSettings, setShowSettings] = useState(false);
+  const [activeTab, setActiveTab] = useState<"feed" | "room">("feed");
+  const [activePage, setActivePage] = useState<NavPage>("home");
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
-  // Railway API から stocks（いいね数）を取得して MOCK_POSTS に反映する
   useEffect(() => {
-    fetch("https://sushi-sns-api-production.up.railway.app/posts")
-      .then((res) => res.json())
-      .then((apiPosts: { id: number; likes: number }[]) => {
-        setPosts((prev) =>
-          prev.map((post) => {
-            const found = apiPosts.find((a) => a.id === post.id);
-            return found ? { ...post, stocks: found.likes } : post;
-          })
-        );
-      })
-      .catch(() => {
-        // API が取れなくても MOCK_POSTS のまま表示を続ける
-      });
+    const handler = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handler);
+    return () => window.removeEventListener("resize", handler);
   }, []);
 
-  const filteredPosts = posts.filter((p) =>
-    activeTab === "collection"
-      ? stockedIds.has(p.id)
-      : activeTab === "room"
-      ? p.room === selected?.room
-      : true
-  );
+  const fetchPosts = useCallback(() => {
+    fetch(`${API_BASE}/posts`)
+      .then((r) => r.json())
+      .then((data: Post[]) => setPosts(data))
+      .catch(() => {});
+  }, []);
 
-  const handleStock = useCallback((id: number) => {
-    setStockedIds((prev) => {
-      const next = new Set(prev);
-      next.add(id);
-      return next;
+  useEffect(() => { fetchPosts(); }, [fetchPosts]);
+
+  const handleLike = useCallback(async (id: number) => {
+    await fetch(`${API_BASE}/posts/${id}/like`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user_id: userId }),
     });
+    setLikedIds((prev) => { const n = new Set(prev); n.add(id); return n; });
+    setPosts((prev) => prev.map((p) => p.id === id ? { ...p, likes: p.likes + 1 } : p));
+  }, [userId]);
+
+  const handleUnlike = useCallback(async (id: number) => {
+    await fetch(`${API_BASE}/posts/${id}/like`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user_id: userId }),
+    });
+    setLikedIds((prev) => { const n = new Set(prev); n.delete(id); return n; });
+    setPosts((prev) => prev.map((p) => p.id === id ? { ...p, likes: Math.max(0, p.likes - 1) } : p));
+  }, [userId]);
+
+  const handleOpenComments = useCallback((post: Post) => {
+    setCommentPost(post);
   }, []);
 
-  const handleOpenComments = useCallback(
-    (post: Post) => {
-      if (!stockedIds.has(post.id)) return;
-      setCommentPost(post);
-    },
-    [stockedIds]
-  );
-
-  const handlePost = (text: string) => {
-    if (!text.trim()) return;
-    const newPost: Post = {
-      id: Date.now(),
-      user: "あなた",
-      avatar: "✨",
-      text,
-      stocks: 0,
-      comments: [],
-      timestamp: "今",
-      room: selected?.room || "フリー",
-      locked: true,
-    };
-    setPosts((prev) => [newPost, ...prev]);
+  const handleChangePage = (page: NavPage) => {
+    if (page === "settings") { setShowSettings(true); return; }
+    setActivePage(page);
   };
 
+  const filteredPosts = activePage === "collection"
+    ? posts.filter((p) => likedIds.has(p.id))
+    : activeTab === "room"
+    ? posts.filter((p) => p.room === selected?.room)
+    : posts;
+
   return (
-    <div
-      style={{
-        display: "flex",
-        height: "100vh",
-        background: "#0a0a12",
-        fontFamily: "'Noto Sans JP', sans-serif",
-        overflow: "hidden",
-      }}
-    >
-      {/* Sidebar */}
-      <Sidebar
-        categories={CATEGORIES}
-        selected={selected}
-        onSelect={setSelected}
-      />
+    <div style={{ display: "flex", height: "100vh", background: "#0a0a12", fontFamily: "'Noto Sans JP', sans-serif", overflow: "hidden" }}>
+
+      {/* Sidebar (PC only) */}
+      {!isMobile && (
+        <Sidebar
+          categories={CATEGORIES}
+          selected={selected}
+          onSelect={(s) => { setSelected(s); setActivePage("home"); }}
+          activePage={activePage}
+          onChangePage={handleChangePage}
+        />
+      )}
 
       {/* Main */}
-      <div
-        style={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          overflow: "hidden",
-        }}
-      >
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", paddingBottom: isMobile ? 60 : 0 }}>
+
         {/* Header */}
-        <div
-          style={{
-            padding: "14px 24px",
-            background: "rgba(8,8,18,0.95)",
-            borderBottom: "1px solid #1a1a2a",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            backdropFilter: "blur(10px)",
-            flexShrink: 0,
-          }}
-        >
+        <div style={{ padding: "14px 24px", background: "rgba(8,8,18,0.95)", borderBottom: "1px solid #1a1a2a", display: "flex", alignItems: "center", justifyContent: "space-between", backdropFilter: "blur(10px)", flexShrink: 0 }}>
           <div>
-            <div
-              style={{
-                color: "#e0e0e0",
-                fontSize: 16,
-                fontWeight: 700,
-                fontFamily: "'Noto Serif JP', serif",
-              }}
-            >
-              {selected?.sub?.icon} {selected?.sub?.label || "全体"}{" "}
-              <span style={{ color: "#444", fontSize: 12, fontWeight: 400 }}>
-                ›
-              </span>{" "}
-              <span style={{ color: "#c0392b", fontSize: 13 }}>
-                #{selected?.room || "ホーム"}
-              </span>
-            </div>
-            <div style={{ color: "#444", fontSize: 10, marginTop: 2 }}>
-              回転中・ホバーで停止
-            </div>
+            {isMobile
+              ? <img src="/logo.svg" alt="あにすし" style={{ height: 32, display: "block", marginBottom: 2 }} />
+              : <div style={{ color: "#e0e0e0", fontSize: 16, fontWeight: 700, fontFamily: "'Noto Serif JP', serif" }}>
+                  {activePage === "collection"
+                    ? "📦 コレクション"
+                    : `${selected?.sub?.icon ?? ""} ${selected?.sub?.label ?? ""} › #${selected?.room ?? "ホーム"}`}
+                </div>
+            }
+            <div style={{ color: "#444", fontSize: 10, marginTop: 2 }}>回転中・ホバーで停止</div>
           </div>
-          <div style={{ display: "flex", gap: 8 }}>
-            <button
-              onClick={() => setShowPost(true)}
-              style={{
-                padding: "8px 18px",
-                background: "#c0392b",
-                border: "none",
-                borderRadius: 10,
-                color: "#fff",
-                cursor: "pointer",
-                fontSize: 13,
-                fontWeight: 700,
-                fontFamily: "'Noto Sans JP', sans-serif",
-                boxShadow: "0 0 20px #c0392b55",
-              }}
-            >
-              + 皿を出す
-            </button>
-          </div>
+          <button onClick={() => setShowPost(true)} style={{ padding: "8px 18px", background: "#c0392b", border: "none", borderRadius: 10, color: "#fff", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "'Noto Sans JP', sans-serif", boxShadow: "0 0 20px #c0392b55" }}>
+            + 皿を出す
+          </button>
         </div>
 
         {/* Stats */}
-        <StatsBar posts={posts} stockedIds={stockedIds} />
+        <StatsBar posts={posts} likedIds={likedIds} />
 
-        {/* Tabs */}
-        <div
-          style={{
-            display: "flex",
-            borderBottom: "1px solid #1a1a2a",
-            background: "rgba(5,5,12,0.9)",
-            flexShrink: 0,
-          }}
-        >
-          {(
-            [
-              ["feed", "🌊 全体フィード"],
-              ["room", "🏠 このルーム"],
-              ["collection", "📦 コレクション"],
-            ] as [string, string][]
-          ).map(([key, label]) => (
-            <button
-              key={key}
-              onClick={() => setActiveTab(key)}
-              style={{
-                padding: "10px 20px",
-                background: "none",
-                border: "none",
-                color: activeTab === key ? "#c0392b" : "#555",
-                borderBottom:
-                  activeTab === key
-                    ? "2px solid #c0392b"
-                    : "2px solid transparent",
-                cursor: "pointer",
-                fontSize: 12,
-                fontWeight: 600,
-                fontFamily: "'Noto Sans JP', sans-serif",
-                transition: "all 0.2s",
-              }}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-
-        {/* Feed label */}
-        <div style={{ padding: "12px 24px 4px", flexShrink: 0 }}>
-          <div
-            style={{
-              color: "#333",
-              fontSize: 11,
-              letterSpacing: 2,
-              fontFamily: "'Noto Sans JP', sans-serif",
-            }}
-          >
-            ━━ 皿が流れています。気に入ったら取ってください ━━
+        {/* Tabs (ホームのみ) */}
+        {activePage === "home" && (
+          <div style={{ display: "flex", borderBottom: "1px solid #1a1a2a", background: "rgba(5,5,12,0.9)", flexShrink: 0 }}>
+            {([["feed", "🌊 全体フィード"], ["room", "🏠 このルーム"]] as ["feed" | "room", string][]).map(([key, label]) => (
+              <button key={key} onClick={() => setActiveTab(key)} style={{ padding: "10px 20px", background: "none", border: "none", color: activeTab === key ? "#c0392b" : "#555", borderBottom: activeTab === key ? "2px solid #c0392b" : "2px solid transparent", cursor: "pointer", fontSize: 12, fontWeight: 600, fontFamily: "'Noto Sans JP', sans-serif", transition: "all 0.2s" }}>
+                {label}
+              </button>
+            ))}
           </div>
-        </div>
+        )}
 
-        {/* Conveyor Belt */}
+        {/* Feed */}
         <div style={{ flex: 1, overflowY: "auto" }}>
           {filteredPosts.length === 0 ? (
-            <div
-              style={{
-                padding: 60,
-                textAlign: "center",
-                color: "#333",
-                fontFamily: "'Noto Sans JP', sans-serif",
-                fontSize: 13,
-              }}
-            >
-              {activeTab === "collection"
+            <div style={{ padding: 60, textAlign: "center", color: "#333", fontFamily: "'Noto Sans JP', sans-serif", fontSize: 13 }}>
+              {activePage === "collection"
                 ? "まだ皿を取っていません。気に入った投稿を取ってみてください！"
                 : "このルームにはまだ投稿がありません。最初の皿を出しましょう！"}
             </div>
           ) : (
             <>
-              <ConveyorBelt
-                posts={filteredPosts}
-                stockedIds={stockedIds}
-                onStock={handleStock}
-                onOpenComments={handleOpenComments}
-              />
-              {/* Plate grid below */}
+              <div style={{ padding: "12px 24px 4px", flexShrink: 0 }}>
+                <div style={{ color: "#333", fontSize: 11, letterSpacing: 2, fontFamily: "'Noto Sans JP', sans-serif" }}>━━ 皿が流れています。気に入ったら取ってください ━━</div>
+              </div>
+              <ConveyorBelt posts={filteredPosts} likedIds={likedIds} onLike={handleLike} onUnlike={handleUnlike} onOpenComments={handleOpenComments} />
               <div style={{ padding: "24px", borderTop: "1px solid #1a1a2a" }}>
-                <div
-                  style={{
-                    color: "#333",
-                    fontSize: 11,
-                    letterSpacing: 2,
-                    fontFamily: "'Noto Sans JP', sans-serif",
-                    marginBottom: 16,
-                  }}
-                >
-                  ━━ 全ての皿 ━━
-                </div>
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns:
-                      "repeat(auto-fill, minmax(280px, 1fr))",
-                    gap: 12,
-                  }}
-                >
+                <div style={{ color: "#333", fontSize: 11, letterSpacing: 2, fontFamily: "'Noto Sans JP', sans-serif", marginBottom: 16 }}>━━ 全ての皿 ━━</div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 12 }}>
                   {filteredPosts.map((post) => (
-                    <PlateCard
-                      key={post.id}
-                      post={post}
-                      isStocked={stockedIds.has(post.id)}
-                      onStock={handleStock}
-                      onOpenComments={handleOpenComments}
-                    />
+                    <PlateCard key={post.id} post={post} isLiked={likedIds.has(post.id)} onLike={handleLike} onUnlike={handleUnlike} onOpenComments={handleOpenComments} />
                   ))}
                 </div>
               </div>
@@ -1449,21 +646,13 @@ export default function App() {
         </div>
       </div>
 
+      {/* Bottom nav (mobile only) */}
+      {isMobile && <BottomNav activePage={activePage} onChangePage={handleChangePage} />}
+
       {/* Modals */}
-      {commentPost && (
-        <CommentModal
-          post={commentPost}
-          canComment={stockedIds.has(commentPost.id)}
-          onClose={() => setCommentPost(null)}
-        />
-      )}
-      {showPost && (
-        <PostModal
-          currentRoom={selected?.room}
-          onClose={() => setShowPost(false)}
-          onPost={handlePost}
-        />
-      )}
+      {commentPost && <CommentModal post={commentPost} onClose={() => setCommentPost(null)} likedIds={likedIds} userId={userId} />}
+      {showPost && <PostModal currentRoom={selected?.room} onClose={() => setShowPost(false)} onPosted={fetchPosts} userId={userId} />}
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
     </div>
   );
 }
