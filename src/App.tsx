@@ -753,6 +753,15 @@ export default function App() {
     setCreatingBucket(false);
   };
 
+  const handleDeleteBucket = async (bucketId: number) => {
+    await fetch(`${API_BASE}/buckets/${bucketId}`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user_id: userId }),
+    });
+    setBuckets((prev) => prev.filter((b) => b.id !== bucketId));
+  };
+
   const likedPosts = posts.filter((p) => likedIds.has(p.id));
 
   const filteredPosts = activeTab === "room"
@@ -878,12 +887,20 @@ export default function App() {
                 ) : (
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 10 }}>
                     {buckets.map((b) => (
-                      <div key={b.id} onClick={() => setViewingBucket(b)}
-                        style={{ background: "rgba(255,255,255,0.03)", border: "1px solid #1f1f2f", borderRadius: 14, padding: "18px 16px", cursor: "pointer", textAlign: "center", transition: "all 0.2s" }}
+                      <div key={b.id}
+                        style={{ background: "rgba(255,255,255,0.03)", border: "1px solid #1f1f2f", borderRadius: 14, padding: "18px 16px", textAlign: "center", transition: "all 0.2s", position: "relative" }}
                         onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.07)"; e.currentTarget.style.borderColor = "#333"; }}
                         onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.03)"; e.currentTarget.style.borderColor = "#1f1f2f"; }}>
-                        <div style={{ fontSize: 28, marginBottom: 8 }}>📦</div>
-                        <div style={{ color: "#ccc", fontSize: 13, fontFamily: "'Noto Sans JP', sans-serif", fontWeight: 600 }}>{b.name}</div>
+                        <div onClick={() => setViewingBucket(b)} style={{ cursor: "pointer" }}>
+                          <div style={{ fontSize: 28, marginBottom: 8 }}>📦</div>
+                          <div style={{ color: "#ccc", fontSize: 13, fontFamily: "'Noto Sans JP', sans-serif", fontWeight: 600 }}>{b.name}</div>
+                        </div>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleDeleteBucket(b.id); }}
+                          style={{ position: "absolute", top: 8, right: 8, background: "none", border: "none", color: "#333", fontSize: 14, cursor: "pointer", padding: "2px 4px", borderRadius: 4, transition: "color 0.15s" }}
+                          onMouseEnter={(e) => (e.currentTarget.style.color = "#e74c3c")}
+                          onMouseLeave={(e) => (e.currentTarget.style.color = "#333")}
+                        >🗑</button>
                       </div>
                     ))}
                   </div>
