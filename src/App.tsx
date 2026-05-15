@@ -171,11 +171,6 @@ function PlateCard({
         e.currentTarget.style.boxShadow = "";
       }}
     >
-      {/* Tier badge */}
-      <div style={{ position: "absolute", top: 10, right: 10, background: tier.bg, color: "#fff", fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 20, fontFamily: "'Noto Sans JP', sans-serif", boxShadow: `0 0 12px ${tier.glow}88`, zIndex: 2 }}>
-        {tier.label}
-      </div>
-
       {/* Own-post badge + delete button */}
       {isOwn && (
         <div style={{ position: "absolute", top: 34, right: 10, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, zIndex: 2 }}>
