@@ -105,6 +105,7 @@ function PlateCard({
   userId,
   onDelete,
   reducedMotion,
+  showSpoilers,
 }: {
   post: Post;
   onLike: (id: number) => void;
@@ -115,6 +116,7 @@ function PlateCard({
   userId?: string;
   onDelete?: (id: number) => void;
   reducedMotion?: boolean;
+  showSpoilers?: boolean;
 }) {
   const tier = TIER_CONFIG[post.tier];
   const [animating, setAnimating] = useState(false);
@@ -122,7 +124,7 @@ function PlateCard({
   const [spoilerRevealed, setSpoilerRevealed] = useState(false);
   const isOwn = !!userId && post.user_id === userId;
   const rm = !!reducedMotion;
-  const isSpoiler = !!post.spoiler && !spoilerRevealed;
+  const isSpoiler = !!post.spoiler && !spoilerRevealed && !showSpoilers;
 
   const handleLike = () => {
     if (isLiked) {
@@ -286,7 +288,7 @@ function PlateCard({
   );
 }
 
-function ConveyorBelt({ posts, likedIds, onLike, onUnlike, onOpenComments, userId, onDelete, forcePaused, reducedMotion, laneCount, lane1Dir, lane2Dir }: {
+function ConveyorBelt({ posts, likedIds, onLike, onUnlike, onOpenComments, userId, onDelete, forcePaused, reducedMotion, showSpoilers, laneCount, lane1Dir, lane2Dir }: {
   posts: Post[];
   likedIds: Set<number>;
   onLike: (id: number) => void;
@@ -296,6 +298,7 @@ function ConveyorBelt({ posts, likedIds, onLike, onUnlike, onOpenComments, userI
   onDelete: (id: number) => void;
   forcePaused?: boolean;
   reducedMotion?: boolean;
+  showSpoilers?: boolean;
   laneCount?: 1 | 2;
   lane1Dir?: "rtl" | "ltr";
   lane2Dir?: "rtl" | "ltr";
@@ -347,7 +350,7 @@ function ConveyorBelt({ posts, likedIds, onLike, onUnlike, onOpenComments, userI
       <div style={{ position: "relative", marginBottom: 16 }}>
         <div ref={track1Ref} style={{ display: "flex", gap: 16, width: "max-content", padding: "0 16px" }}>
           {doubled.map((post, i) => (
-            <PlateCard key={`l1-${post.id}-${i}`} post={post} isLiked={likedIds.has(post.id)} onLike={onLike} onUnlike={onUnlike} onOpenComments={onOpenComments} userId={userId} onDelete={onDelete} reducedMotion={reducedMotion} />
+            <PlateCard key={`l1-${post.id}-${i}`} post={post} isLiked={likedIds.has(post.id)} onLike={onLike} onUnlike={onUnlike} onOpenComments={onOpenComments} userId={userId} onDelete={onDelete} reducedMotion={reducedMotion} showSpoilers={showSpoilers} />
           ))}
         </div>
       </div>
@@ -356,7 +359,7 @@ function ConveyorBelt({ posts, likedIds, onLike, onUnlike, onOpenComments, userI
         <div style={{ position: "relative" }}>
           <div ref={track2Ref} style={{ display: "flex", gap: 16, width: "max-content", padding: "0 16px" }}>
             {doubled.map((post, i) => (
-              <PlateCard key={`l2-${post.id}-${i}`} post={post} isLiked={likedIds.has(post.id)} onLike={onLike} onUnlike={onUnlike} onOpenComments={onOpenComments} userId={userId} onDelete={onDelete} reducedMotion={reducedMotion} />
+              <PlateCard key={`l2-${post.id}-${i}`} post={post} isLiked={likedIds.has(post.id)} onLike={onLike} onUnlike={onUnlike} onOpenComments={onOpenComments} userId={userId} onDelete={onDelete} reducedMotion={reducedMotion} showSpoilers={showSpoilers} />
             ))}
           </div>
         </div>
@@ -622,10 +625,12 @@ function PostModal({ currentRoom, onClose, onPosted, userId }: { currentRoom: st
   );
 }
 
-function SettingsModal({ onClose, reducedMotion, onToggleReducedMotion, laneCount, onSetLaneCount, lane1Dir, onSetLane1Dir, lane2Dir, onSetLane2Dir }: {
+function SettingsModal({ onClose, reducedMotion, onToggleReducedMotion, showSpoilers, onToggleShowSpoilers, laneCount, onSetLaneCount, lane1Dir, onSetLane1Dir, lane2Dir, onSetLane2Dir }: {
   onClose: () => void;
   reducedMotion: boolean;
   onToggleReducedMotion: () => void;
+  showSpoilers: boolean;
+  onToggleShowSpoilers: () => void;
   laneCount: 1 | 2;
   onSetLaneCount: (n: 1 | 2) => void;
   lane1Dir: "rtl" | "ltr";
@@ -633,7 +638,7 @@ function SettingsModal({ onClose, reducedMotion, onToggleReducedMotion, laneCoun
   lane2Dir: "rtl" | "ltr";
   onSetLane2Dir: (d: "rtl" | "ltr") => void;
 }) {
-  const pending = ["流れる速さの調節", "ダークモード切り替え", "SEのオン・オフ", "BGMのオン・オフ", "文字サイズの調節", "言語切り替え", "ネタバレ防止フィルター"];
+  const pending = ["流れる速さの調節", "ダークモード切り替え", "SEのオン・オフ", "BGMのオン・オフ", "文字サイズの調節", "言語切り替え"];
 
   const Toggle = ({ on, onToggle }: { on: boolean; onToggle: () => void }) => (
     <div onClick={onToggle} style={{ width: 44, height: 24, borderRadius: 12, background: on ? "#c0392b" : "#2a2a3a", position: "relative", cursor: "pointer", transition: "background 0.2s", border: `1px solid ${on ? "#e74c3c" : "#444"}`, flexShrink: 0 }}>
@@ -685,6 +690,12 @@ function SettingsModal({ onClose, reducedMotion, onToggleReducedMotion, laneCoun
               <DirSelect value={lane2Dir} onChange={onSetLane2Dir} />
             </div>
           )}
+
+          {/* ネタバレを表示 */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: "1px solid #1a1a2a" }}>
+            <span style={{ color: "#e0e0e0", fontSize: 13, fontFamily: "'Noto Sans JP', sans-serif" }}>ネタバレを表示</span>
+            <Toggle on={showSpoilers} onToggle={onToggleShowSpoilers} />
+          </div>
 
           {/* アニメーション簡略化 */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: "1px solid #1a1a2a" }}>
@@ -965,6 +976,7 @@ export default function App() {
   const [showPost, setShowPost] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
+  const [showSpoilers, setShowSpoilers] = useState(false);
   const [laneCount, setLaneCount] = useState<1 | 2>(2);
   const [lane1Dir, setLane1Dir] = useState<"rtl" | "ltr">("rtl");
   const [lane2Dir, setLane2Dir] = useState<"rtl" | "ltr">("ltr");
@@ -1152,6 +1164,7 @@ export default function App() {
                         userId={userId}
                         onDelete={handleDeletePost}
                         reducedMotion={reducedMotion}
+                        showSpoilers={showSpoilers}
                       />
                     ))}
                   </div>
@@ -1223,7 +1236,7 @@ export default function App() {
                     <div style={{ color: "#333", fontSize: 11, letterSpacing: 2, fontFamily: "'Noto Sans JP', sans-serif", marginBottom: 16 }}>━━ 出した皿 ━━</div>
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 12 }}>
                       {myPosts.map((post) => (
-                        <PlateCard key={post.id} post={post} isLiked={likedIds.has(post.id)} onLike={handleLike} onUnlike={handleUnlike} onOpenComments={handleOpenComments} userId={userId} onDelete={handleDeletePost} reducedMotion={reducedMotion} />
+                        <PlateCard key={post.id} post={post} isLiked={likedIds.has(post.id)} onLike={handleLike} onUnlike={handleUnlike} onOpenComments={handleOpenComments} userId={userId} onDelete={handleDeletePost} reducedMotion={reducedMotion} showSpoilers={showSpoilers} />
                       ))}
                     </div>
                   </div>
@@ -1242,12 +1255,12 @@ export default function App() {
                 <div style={{ padding: "12px 24px 4px", flexShrink: 0 }}>
                   <div style={{ color: "#333", fontSize: 11, letterSpacing: 2, fontFamily: "'Noto Sans JP', sans-serif" }}>━━ 皿が流れています。気に入ったら取ってください ━━</div>
                 </div>
-                <ConveyorBelt posts={filteredPosts} likedIds={likedIds} onLike={handleLike} onUnlike={handleUnlike} onOpenComments={handleOpenComments} userId={userId} onDelete={handleDeletePost} forcePaused={showSettings} reducedMotion={reducedMotion} laneCount={laneCount} lane1Dir={lane1Dir} lane2Dir={lane2Dir} />
+                <ConveyorBelt posts={filteredPosts} likedIds={likedIds} onLike={handleLike} onUnlike={handleUnlike} onOpenComments={handleOpenComments} userId={userId} onDelete={handleDeletePost} forcePaused={showSettings} reducedMotion={reducedMotion} showSpoilers={showSpoilers} laneCount={laneCount} lane1Dir={lane1Dir} lane2Dir={lane2Dir} />
                 <div style={{ padding: "24px", borderTop: "1px solid #1a1a2a" }}>
                   <div style={{ color: "#333", fontSize: 11, letterSpacing: 2, fontFamily: "'Noto Sans JP', sans-serif", marginBottom: 16 }}>━━ 全ての皿 ━━</div>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 12 }}>
                     {filteredPosts.map((post) => (
-                      <PlateCard key={post.id} post={post} isLiked={likedIds.has(post.id)} onLike={handleLike} onUnlike={handleUnlike} onOpenComments={handleOpenComments} userId={userId} onDelete={handleDeletePost} reducedMotion={reducedMotion} />
+                      <PlateCard key={post.id} post={post} isLiked={likedIds.has(post.id)} onLike={handleLike} onUnlike={handleUnlike} onOpenComments={handleOpenComments} userId={userId} onDelete={handleDeletePost} reducedMotion={reducedMotion} showSpoilers={showSpoilers} />
                     ))}
                   </div>
                 </div>
@@ -1263,7 +1276,7 @@ export default function App() {
       {/* Modals */}
       {commentPost && <CommentModal post={commentPost} onClose={() => setCommentPost(null)} likedIds={likedIds} userId={userId} />}
       {showPost && <PostModal currentRoom={selected?.room} onClose={() => setShowPost(false)} onPosted={fetchPosts} userId={userId} />}
-      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} reducedMotion={reducedMotion} onToggleReducedMotion={() => setReducedMotion((v) => !v)} laneCount={laneCount} onSetLaneCount={setLaneCount} lane1Dir={lane1Dir} onSetLane1Dir={setLane1Dir} lane2Dir={lane2Dir} onSetLane2Dir={setLane2Dir} />}
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} reducedMotion={reducedMotion} onToggleReducedMotion={() => setReducedMotion((v) => !v)} showSpoilers={showSpoilers} onToggleShowSpoilers={() => setShowSpoilers((v) => !v)} laneCount={laneCount} onSetLaneCount={setLaneCount} lane1Dir={lane1Dir} onSetLane1Dir={setLane1Dir} lane2Dir={lane2Dir} onSetLane2Dir={setLane2Dir} />}
       {bucketTarget && (
         <BucketSelectorModal
           post={bucketTarget}
