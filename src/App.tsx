@@ -271,7 +271,7 @@ function PlateCard({
   );
 }
 
-function ConveyorBelt({ posts, likedIds, onLike, onUnlike, onOpenComments, userId, onDelete, forcePaused, reducedMotion }: {
+function ConveyorBelt({ posts, likedIds, onLike, onUnlike, onOpenComments, userId, onDelete, forcePaused, reducedMotion, laneCount, lane1Dir, lane2Dir }: {
   posts: Post[];
   likedIds: Set<number>;
   onLike: (id: number) => void;
@@ -281,6 +281,9 @@ function ConveyorBelt({ posts, likedIds, onLike, onUnlike, onOpenComments, userI
   onDelete: (id: number) => void;
   forcePaused?: boolean;
   reducedMotion?: boolean;
+  laneCount?: 1 | 2;
+  lane1Dir?: "rtl" | "ltr";
+  lane2Dir?: "rtl" | "ltr";
 }) {
   const track1Ref = useRef<HTMLDivElement>(null);
   const track2Ref = useRef<HTMLDivElement>(null);
@@ -293,27 +296,32 @@ function ConveyorBelt({ posts, likedIds, onLike, onUnlike, onOpenComments, userI
   useEffect(() => {
     const t1 = track1Ref.current;
     const t2 = track2Ref.current;
-    if (!t1 || !t2) return;
+    if (!t1) return;
+    const dir1 = lane1Dir ?? "rtl";
+    const dir2 = lane2Dir ?? "ltr";
+    const lanes = laneCount ?? 2;
     let last: number | null = null;
     const step = (ts: number) => {
       if (!last) last = ts;
       if (!paused) {
         const delta = (ts - last) * 0.04;
         const total1 = t1.scrollWidth / 2;
-        const total2 = t2.scrollWidth / 2;
         pos1Ref.current += delta;
         if (pos1Ref.current >= total1) pos1Ref.current -= total1;
-        t1.style.transform = `translateX(-${pos1Ref.current}px)`;
-        pos2Ref.current += delta;
-        if (pos2Ref.current >= total2) pos2Ref.current -= total2;
-        t2.style.transform = `translateX(${pos2Ref.current - total2}px)`;
+        t1.style.transform = dir1 === "rtl" ? `translateX(-${pos1Ref.current}px)` : `translateX(${pos1Ref.current - total1}px)`;
+        if (lanes === 2 && t2) {
+          const total2 = t2.scrollWidth / 2;
+          pos2Ref.current += delta;
+          if (pos2Ref.current >= total2) pos2Ref.current -= total2;
+          t2.style.transform = dir2 === "rtl" ? `translateX(-${pos2Ref.current}px)` : `translateX(${pos2Ref.current - total2}px)`;
+        }
       }
       last = ts;
       rafRef.current = requestAnimationFrame(step);
     };
     rafRef.current = requestAnimationFrame(step);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [paused]);
+  }, [paused, laneCount, lane1Dir, lane2Dir]);
 
   const doubled = [...posts, ...posts];
 
@@ -328,14 +336,16 @@ function ConveyorBelt({ posts, likedIds, onLike, onUnlike, onOpenComments, userI
           ))}
         </div>
       </div>
-      {/* レーン2: 左から右 */}
-      <div style={{ position: "relative" }}>
-        <div ref={track2Ref} style={{ display: "flex", gap: 16, width: "max-content", padding: "0 16px" }}>
-          {doubled.map((post, i) => (
-            <PlateCard key={`l2-${post.id}-${i}`} post={post} isLiked={likedIds.has(post.id)} onLike={onLike} onUnlike={onUnlike} onOpenComments={onOpenComments} userId={userId} onDelete={onDelete} reducedMotion={reducedMotion} />
-          ))}
+      {/* レーン2 */}
+      {(laneCount ?? 2) === 2 && (
+        <div style={{ position: "relative" }}>
+          <div ref={track2Ref} style={{ display: "flex", gap: 16, width: "max-content", padding: "0 16px" }}>
+            {doubled.map((post, i) => (
+              <PlateCard key={`l2-${post.id}-${i}`} post={post} isLiked={likedIds.has(post.id)} onLike={onLike} onUnlike={onUnlike} onOpenComments={onOpenComments} userId={userId} onDelete={onDelete} reducedMotion={reducedMotion} />
+            ))}
+          </div>
         </div>
-      </div>
+      )}
       <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 80, background: "linear-gradient(90deg, #0a0a12, transparent)", zIndex: 2, pointerEvents: "none" }} />
       <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: 80, background: "linear-gradient(-90deg, #0a0a12, transparent)", zIndex: 2, pointerEvents: "none" }} />
     </div>
@@ -590,12 +600,35 @@ function PostModal({ currentRoom, onClose, onPosted, userId }: { currentRoom: st
   );
 }
 
-function SettingsModal({ onClose, reducedMotion, onToggleReducedMotion }: {
+function SettingsModal({ onClose, reducedMotion, onToggleReducedMotion, laneCount, onSetLaneCount, lane1Dir, onSetLane1Dir, lane2Dir, onSetLane2Dir }: {
   onClose: () => void;
   reducedMotion: boolean;
   onToggleReducedMotion: () => void;
+  laneCount: 1 | 2;
+  onSetLaneCount: (n: 1 | 2) => void;
+  lane1Dir: "rtl" | "ltr";
+  onSetLane1Dir: (d: "rtl" | "ltr") => void;
+  lane2Dir: "rtl" | "ltr";
+  onSetLane2Dir: (d: "rtl" | "ltr") => void;
 }) {
   const pending = ["流れる速さの調節", "ダークモード切り替え", "SEのオン・オフ", "BGMのオン・オフ", "文字サイズの調節", "言語切り替え", "ネタバレ防止フィルター"];
+
+  const Toggle = ({ on, onToggle }: { on: boolean; onToggle: () => void }) => (
+    <div onClick={onToggle} style={{ width: 44, height: 24, borderRadius: 12, background: on ? "#c0392b" : "#2a2a3a", position: "relative", cursor: "pointer", transition: "background 0.2s", border: `1px solid ${on ? "#e74c3c" : "#444"}`, flexShrink: 0 }}>
+      <div style={{ position: "absolute", top: 3, left: on ? 22 : 3, width: 16, height: 16, borderRadius: "50%", background: "#fff", transition: "left 0.2s" }} />
+    </div>
+  );
+
+  const DirSelect = ({ value, onChange }: { value: "rtl" | "ltr"; onChange: (d: "rtl" | "ltr") => void }) => (
+    <div style={{ display: "flex", gap: 4 }}>
+      {(["rtl", "ltr"] as const).map((d) => (
+        <button key={d} onClick={() => onChange(d)} style={{ padding: "3px 10px", borderRadius: 8, border: `1px solid ${value === d ? "#e74c3c" : "#333"}`, background: value === d ? "rgba(192,57,43,0.2)" : "rgba(255,255,255,0.03)", color: value === d ? "#e74c3c" : "#666", fontSize: 11, cursor: "pointer", fontFamily: "'Noto Sans JP', sans-serif", fontWeight: 600 }}>
+          {d === "rtl" ? "右→左" : "左→右"}
+        </button>
+      ))}
+    </div>
+  );
+
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }} onClick={onClose}>
       <div style={{ background: "#0f0f1a", border: "1px solid #333", borderRadius: 20, width: "100%", maxWidth: 420, overflow: "hidden" }} onClick={(e) => e.stopPropagation()}>
@@ -604,16 +637,39 @@ function SettingsModal({ onClose, reducedMotion, onToggleReducedMotion }: {
           <button onClick={onClose} style={{ background: "none", border: "none", color: "#666", fontSize: 20, cursor: "pointer" }}>✕</button>
         </div>
         <div style={{ padding: 20 }}>
-          {/* アニメーション簡略化（実装済み） */}
+
+          {/* レーン数 */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: "1px solid #1a1a2a" }}>
-            <span style={{ color: "#e0e0e0", fontSize: 13, fontFamily: "'Noto Sans JP', sans-serif" }}>アニメーション簡略化</span>
-            <div
-              onClick={onToggleReducedMotion}
-              style={{ width: 44, height: 24, borderRadius: 12, background: reducedMotion ? "#c0392b" : "#2a2a3a", position: "relative", cursor: "pointer", transition: "background 0.2s", border: `1px solid ${reducedMotion ? "#e74c3c" : "#444"}` }}
-            >
-              <div style={{ position: "absolute", top: 3, left: reducedMotion ? 22 : 3, width: 16, height: 16, borderRadius: "50%", background: "#fff", transition: "left 0.2s" }} />
+            <span style={{ color: "#e0e0e0", fontSize: 13, fontFamily: "'Noto Sans JP', sans-serif" }}>流れるレーン数</span>
+            <div style={{ display: "flex", gap: 4 }}>
+              {([1, 2] as const).map((n) => (
+                <button key={n} onClick={() => onSetLaneCount(n)} style={{ padding: "3px 14px", borderRadius: 8, border: `1px solid ${laneCount === n ? "#e74c3c" : "#333"}`, background: laneCount === n ? "rgba(192,57,43,0.2)" : "rgba(255,255,255,0.03)", color: laneCount === n ? "#e74c3c" : "#666", fontSize: 12, cursor: "pointer", fontWeight: 700 }}>
+                  {n}本
+                </button>
+              ))}
             </div>
           </div>
+
+          {/* 1本目の向き */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: "1px solid #1a1a2a" }}>
+            <span style={{ color: "#e0e0e0", fontSize: 13, fontFamily: "'Noto Sans JP', sans-serif" }}>1本目の向き</span>
+            <DirSelect value={lane1Dir} onChange={onSetLane1Dir} />
+          </div>
+
+          {/* 2本目の向き（2レーン時のみ） */}
+          {laneCount === 2 && (
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: "1px solid #1a1a2a" }}>
+              <span style={{ color: "#e0e0e0", fontSize: 13, fontFamily: "'Noto Sans JP', sans-serif" }}>2本目の向き</span>
+              <DirSelect value={lane2Dir} onChange={onSetLane2Dir} />
+            </div>
+          )}
+
+          {/* アニメーション簡略化 */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: "1px solid #1a1a2a" }}>
+            <span style={{ color: "#e0e0e0", fontSize: 13, fontFamily: "'Noto Sans JP', sans-serif" }}>アニメーション簡略化</span>
+            <Toggle on={reducedMotion} onToggle={onToggleReducedMotion} />
+          </div>
+
           {pending.map((label) => (
             <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: "1px solid #1a1a2a" }}>
               <span style={{ color: "#888", fontSize: 13, fontFamily: "'Noto Sans JP', sans-serif" }}>{label}</span>
@@ -887,6 +943,9 @@ export default function App() {
   const [showPost, setShowPost] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
+  const [laneCount, setLaneCount] = useState<1 | 2>(2);
+  const [lane1Dir, setLane1Dir] = useState<"rtl" | "ltr">("rtl");
+  const [lane2Dir, setLane2Dir] = useState<"rtl" | "ltr">("ltr");
   const [activeTab, setActiveTab] = useState<"feed" | "room">("feed");
   const [activePage, setActivePage] = useState<NavPage>("home");
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -1161,7 +1220,7 @@ export default function App() {
                 <div style={{ padding: "12px 24px 4px", flexShrink: 0 }}>
                   <div style={{ color: "#333", fontSize: 11, letterSpacing: 2, fontFamily: "'Noto Sans JP', sans-serif" }}>━━ 皿が流れています。気に入ったら取ってください ━━</div>
                 </div>
-                <ConveyorBelt posts={filteredPosts} likedIds={likedIds} onLike={handleLike} onUnlike={handleUnlike} onOpenComments={handleOpenComments} userId={userId} onDelete={handleDeletePost} forcePaused={showSettings} reducedMotion={reducedMotion} />
+                <ConveyorBelt posts={filteredPosts} likedIds={likedIds} onLike={handleLike} onUnlike={handleUnlike} onOpenComments={handleOpenComments} userId={userId} onDelete={handleDeletePost} forcePaused={showSettings} reducedMotion={reducedMotion} laneCount={laneCount} lane1Dir={lane1Dir} lane2Dir={lane2Dir} />
                 <div style={{ padding: "24px", borderTop: "1px solid #1a1a2a" }}>
                   <div style={{ color: "#333", fontSize: 11, letterSpacing: 2, fontFamily: "'Noto Sans JP', sans-serif", marginBottom: 16 }}>━━ 全ての皿 ━━</div>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 12 }}>
@@ -1182,7 +1241,7 @@ export default function App() {
       {/* Modals */}
       {commentPost && <CommentModal post={commentPost} onClose={() => setCommentPost(null)} likedIds={likedIds} userId={userId} />}
       {showPost && <PostModal currentRoom={selected?.room} onClose={() => setShowPost(false)} onPosted={fetchPosts} userId={userId} />}
-      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} reducedMotion={reducedMotion} onToggleReducedMotion={() => setReducedMotion((v) => !v)} />}
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} reducedMotion={reducedMotion} onToggleReducedMotion={() => setReducedMotion((v) => !v)} laneCount={laneCount} onSetLaneCount={setLaneCount} lane1Dir={lane1Dir} onSetLane1Dir={setLane1Dir} lane2Dir={lane2Dir} onSetLane2Dir={setLane2Dir} />}
       {bucketTarget && (
         <BucketSelectorModal
           post={bucketTarget}
