@@ -22,6 +22,7 @@ type Post = {
   room: string;
   created_at: string;
   tier: Tier;
+  spoiler: number;
 };
 
 type Comment = {
@@ -118,8 +119,10 @@ function PlateCard({
   const tier = TIER_CONFIG[post.tier];
   const [animating, setAnimating] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const [spoilerRevealed, setSpoilerRevealed] = useState(false);
   const isOwn = !!userId && post.user_id === userId;
   const rm = !!reducedMotion;
+  const isSpoiler = !!post.spoiler && !spoilerRevealed;
 
   const handleLike = () => {
     if (isLiked) {
@@ -221,6 +224,18 @@ function PlateCard({
         #{post.room || "フリー"}
       </div>
 
+      {/* Spoiler overlay button */}
+      {!!post.spoiler && !spoilerRevealed && (
+        <div style={{ position: "absolute", top: 36, left: 0, right: 0, display: "flex", justifyContent: "center", zIndex: 3 }}>
+          <button
+            onClick={(e) => { e.stopPropagation(); setSpoilerRevealed(true); }}
+            style={{ padding: "6px 18px", background: "rgba(230,126,34,0.18)", border: "1px solid #e67e22", borderRadius: 20, color: "#e67e22", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "'Noto Sans JP', sans-serif", backdropFilter: "blur(4px)" }}
+          >
+            ⚠ ネタバレ
+          </button>
+        </div>
+      )}
+
       {/* Content */}
       <div style={{ padding: "42px 16px 14px 16px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
@@ -237,7 +252,7 @@ function PlateCard({
           </div>
         </div>
 
-        <p style={{ color: "#d0d0d0", fontSize: 13, lineHeight: 1.7, fontFamily: "'Noto Sans JP', sans-serif", margin: 0, marginBottom: 14, display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+        <p style={{ color: "#d0d0d0", fontSize: 13, lineHeight: 1.7, fontFamily: "'Noto Sans JP', sans-serif", margin: 0, marginBottom: 14, display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical", overflow: "hidden", filter: isSpoiler ? "blur(6px)" : "none", userSelect: isSpoiler ? "none" : "auto", transition: "filter 0.3s" }}>
           {post.content}
         </p>
 
@@ -553,6 +568,7 @@ function CommentModal({ post, onClose, likedIds, userId }: { post: Post; onClose
 
 function PostModal({ currentRoom, onClose, onPosted, userId }: { currentRoom: string | undefined; onClose: () => void; onPosted: () => void; userId: string }) {
   const [text, setText] = useState("");
+  const [isSpoiler, setIsSpoiler] = useState(false);
   const MAX = 80;
 
   const submit = async () => {
@@ -560,7 +576,7 @@ function PostModal({ currentRoom, onClose, onPosted, userId }: { currentRoom: st
     await fetch(`${API_BASE}/posts`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content: text.trim(), user_id: userId, room: currentRoom || "" }),
+      body: JSON.stringify({ content: text.trim(), user_id: userId, room: currentRoom || "", spoiler: isSpoiler }),
     });
     onPosted();
     onClose();
@@ -569,11 +585,17 @@ function PostModal({ currentRoom, onClose, onPosted, userId }: { currentRoom: st
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }} onClick={onClose}>
       <div style={{ background: "#0f0f1a", border: "1px solid #444", borderRadius: 20, width: "100%", maxWidth: 480, overflow: "hidden" }} onClick={(e) => e.stopPropagation()}>
-        <div style={{ padding: "16px 20px", borderBottom: "1px solid #222", display: "flex", justifyContent: "space-between" }}>
-          <span style={{ color: "#e0e0e0", fontFamily: "'Noto Sans JP', sans-serif", fontSize: 14, fontWeight: 700 }}>
+        <div style={{ padding: "16px 20px", borderBottom: "1px solid #222", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+          <span style={{ color: "#e0e0e0", fontFamily: "'Noto Sans JP', sans-serif", fontSize: 14, fontWeight: 700, flexShrink: 0 }}>
             🍽 皿に乗せる — <span style={{ color: "#c0392b" }}>#{currentRoom || "ルームを選択"}</span>
           </span>
-          <button onClick={onClose} style={{ background: "none", border: "none", color: "#666", fontSize: 20, cursor: "pointer" }}>✕</button>
+          <button
+            onClick={() => setIsSpoiler((v) => !v)}
+            style={{ padding: "4px 10px", borderRadius: 20, border: `1px solid ${isSpoiler ? "#e67e22" : "#333"}`, background: isSpoiler ? "rgba(230,126,34,0.2)" : "rgba(255,255,255,0.03)", color: isSpoiler ? "#e67e22" : "#555", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "'Noto Sans JP', sans-serif", transition: "all 0.2s", flexShrink: 0 }}
+          >
+            ⚠️ ネタバレ注意
+          </button>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: "#666", fontSize: 20, cursor: "pointer", marginLeft: "auto" }}>✕</button>
         </div>
         <div style={{ padding: 20 }}>
           <textarea
