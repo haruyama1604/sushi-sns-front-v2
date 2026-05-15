@@ -101,6 +101,7 @@ function PlateCard({
   onOpenComments,
   isLiked,
   onAddToBucket,
+  userId,
 }: {
   post: Post;
   onLike: (id: number) => void;
@@ -108,9 +109,11 @@ function PlateCard({
   onOpenComments: (post: Post) => void;
   isLiked: boolean;
   onAddToBucket?: (post: Post) => void;
+  userId?: string;
 }) {
   const tier = TIER_CONFIG[post.tier];
   const [animating, setAnimating] = useState(false);
+  const isOwn = !!userId && post.user_id === userId;
 
   const handleLike = () => {
     if (isLiked) {
@@ -128,27 +131,37 @@ function PlateCard({
         minWidth: 280,
         maxWidth: 280,
         background: tier.cardBg,
-        border: `1.5px solid ${tier.border}44`,
+        border: isOwn ? "1.5px solid rgba(255,255,255,0.6)" : `1.5px solid ${tier.border}44`,
         borderRadius: 16,
         overflow: "hidden",
         position: "relative",
         cursor: "pointer",
         transition: "transform 0.2s, box-shadow 0.2s",
         flexShrink: 0,
+        boxShadow: isOwn ? "0 0 12px rgba(255,255,255,0.25), 0 0 24px rgba(255,255,255,0.1)" : undefined,
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.transform = "translateY(-4px) scale(1.02)";
-        e.currentTarget.style.boxShadow = `0 8px 32px ${tier.glow}55`;
+        e.currentTarget.style.boxShadow = isOwn
+          ? `0 8px 32px ${tier.glow}55, 0 0 16px rgba(255,255,255,0.35), 0 0 32px rgba(255,255,255,0.15)`
+          : `0 8px 32px ${tier.glow}55`;
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.transform = "";
-        e.currentTarget.style.boxShadow = "";
+        e.currentTarget.style.boxShadow = isOwn ? "0 0 12px rgba(255,255,255,0.25), 0 0 24px rgba(255,255,255,0.1)" : "";
       }}
     >
       {/* Tier badge */}
       <div style={{ position: "absolute", top: 10, right: 10, background: tier.bg, color: "#fff", fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 20, fontFamily: "'Noto Sans JP', sans-serif", boxShadow: `0 0 12px ${tier.glow}88`, zIndex: 2 }}>
         {tier.label}
       </div>
+
+      {/* Own-post badge */}
+      {isOwn && (
+        <div style={{ position: "absolute", top: 34, right: 10, background: "rgba(255,255,255,0.12)", color: "#fff", fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 20, fontFamily: "'Noto Sans JP', sans-serif", border: "1px solid rgba(255,255,255,0.3)", zIndex: 2, backdropFilter: "blur(4px)" }}>
+          ✍️ あなた
+        </div>
+      )}
 
       {/* Room tag */}
       <div style={{ position: "absolute", top: 10, left: 10, background: "rgba(255,255,255,0.08)", color: "#aaa", fontSize: 10, padding: "2px 8px", borderRadius: 20, fontFamily: "'Noto Sans JP', sans-serif", zIndex: 2 }}>
@@ -205,12 +218,13 @@ function PlateCard({
   );
 }
 
-function ConveyorBelt({ posts, likedIds, onLike, onUnlike, onOpenComments }: {
+function ConveyorBelt({ posts, likedIds, onLike, onUnlike, onOpenComments, userId }: {
   posts: Post[];
   likedIds: Set<number>;
   onLike: (id: number) => void;
   onUnlike: (id: number) => void;
   onOpenComments: (post: Post) => void;
+  userId: string;
 }) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [paused, setPaused] = useState(false);
@@ -243,7 +257,7 @@ function ConveyorBelt({ posts, likedIds, onLike, onUnlike, onOpenComments }: {
       onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
       <div ref={trackRef} style={{ display: "flex", gap: 16, width: "max-content", padding: "0 16px", position: "relative", zIndex: 1 }}>
         {doubled.map((post, i) => (
-          <PlateCard key={`${post.id}-${i}`} post={post} isLiked={likedIds.has(post.id)} onLike={onLike} onUnlike={onUnlike} onOpenComments={onOpenComments} />
+          <PlateCard key={`${post.id}-${i}`} post={post} isLiked={likedIds.has(post.id)} onLike={onLike} onUnlike={onUnlike} onOpenComments={onOpenComments} userId={userId} />
         ))}
       </div>
       <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 80, background: "linear-gradient(90deg, #0a0a12, transparent)", zIndex: 2, pointerEvents: "none" }} />
@@ -954,6 +968,7 @@ export default function App() {
                         onUnlike={handleUnlike}
                         onOpenComments={handleOpenComments}
                         onAddToBucket={(p) => setBucketTarget(p)}
+                        userId={userId}
                       />
                     ))}
                   </div>
@@ -1031,12 +1046,12 @@ export default function App() {
                 <div style={{ padding: "12px 24px 4px", flexShrink: 0 }}>
                   <div style={{ color: "#333", fontSize: 11, letterSpacing: 2, fontFamily: "'Noto Sans JP', sans-serif" }}>━━ 皿が流れています。気に入ったら取ってください ━━</div>
                 </div>
-                <ConveyorBelt posts={filteredPosts} likedIds={likedIds} onLike={handleLike} onUnlike={handleUnlike} onOpenComments={handleOpenComments} />
+                <ConveyorBelt posts={filteredPosts} likedIds={likedIds} onLike={handleLike} onUnlike={handleUnlike} onOpenComments={handleOpenComments} userId={userId} />
                 <div style={{ padding: "24px", borderTop: "1px solid #1a1a2a" }}>
                   <div style={{ color: "#333", fontSize: 11, letterSpacing: 2, fontFamily: "'Noto Sans JP', sans-serif", marginBottom: 16 }}>━━ 全ての皿 ━━</div>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 12 }}>
                     {filteredPosts.map((post) => (
-                      <PlateCard key={post.id} post={post} isLiked={likedIds.has(post.id)} onLike={handleLike} onUnlike={handleUnlike} onOpenComments={handleOpenComments} />
+                      <PlateCard key={post.id} post={post} isLiked={likedIds.has(post.id)} onLike={handleLike} onUnlike={handleUnlike} onOpenComments={handleOpenComments} userId={userId} />
                     ))}
                   </div>
                 </div>
