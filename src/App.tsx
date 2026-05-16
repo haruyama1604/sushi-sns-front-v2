@@ -285,7 +285,7 @@ function PlateCard({
   );
 }
 
-function ConveyorBelt({ posts, likedIds, onLike, onUnlike, onOpenComments, userId, onDelete, forcePaused, reducedMotion, showSpoilers, laneCount, lane1Dir, lane2Dir, isMobile, mobileDir }: {
+function ConveyorBelt({ posts, likedIds, onLike, onUnlike, onOpenComments, userId, onDelete, forcePaused, reducedMotion, showSpoilers, laneCount, lane1Dir, lane2Dir, isMobile }: {
   posts: Post[];
   likedIds: Set<number>;
   onLike: (id: number) => void;
@@ -300,7 +300,6 @@ function ConveyorBelt({ posts, likedIds, onLike, onUnlike, onOpenComments, userI
   lane1Dir?: "rtl" | "ltr";
   lane2Dir?: "rtl" | "ltr";
   isMobile?: boolean;
-  mobileDir?: "vertical" | "horizontal";
 }) {
   const track1Ref = useRef<HTMLDivElement>(null);
   const track2Ref = useRef<HTMLDivElement>(null);
@@ -646,7 +645,7 @@ function PostModal({ currentRoom, onClose, onPosted, userId }: { currentRoom: st
   );
 }
 
-function SettingsModal({ onClose, reducedMotion, onToggleReducedMotion, showSpoilers, onToggleShowSpoilers, laneCount, onSetLaneCount, lane1Dir, onSetLane1Dir, lane2Dir, onSetLane2Dir, isMobile, mobileConveyorDir, onSetMobileConveyorDir }: {
+function SettingsModal({ onClose, reducedMotion, onToggleReducedMotion, showSpoilers, onToggleShowSpoilers, laneCount, onSetLaneCount, lane1Dir, onSetLane1Dir, lane2Dir, onSetLane2Dir, isMobile }: {
   onClose: () => void;
   reducedMotion: boolean;
   onToggleReducedMotion: () => void;
@@ -659,8 +658,6 @@ function SettingsModal({ onClose, reducedMotion, onToggleReducedMotion, showSpoi
   lane2Dir: "rtl" | "ltr";
   onSetLane2Dir: (d: "rtl" | "ltr") => void;
   isMobile: boolean;
-  mobileConveyorDir: "vertical" | "horizontal";
-  onSetMobileConveyorDir: (d: "vertical" | "horizontal") => void;
 }) {
   const pending = ["流れる速さの調節", "ダークモード切り替え", "SEのオン・オフ", "BGMのオン・オフ", "文字サイズの調節", "言語切り替え"];
 
@@ -1008,7 +1005,6 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
   const [showSpoilers, setShowSpoilers] = useState(false);
-  const [mobileConveyorDir, setMobileConveyorDir] = useState<"vertical" | "horizontal">("vertical");
   const [laneCount, setLaneCount] = useState<1 | 2>(2);
   const [lane1Dir, setLane1Dir] = useState<"rtl" | "ltr">("rtl");
   const [lane2Dir, setLane2Dir] = useState<"rtl" | "ltr">("ltr");
@@ -1311,7 +1307,7 @@ export default function App() {
                 <div style={{ padding: "12px 24px 4px", flexShrink: 0 }}>
                   <div style={{ color: "#333", fontSize: 11, letterSpacing: 2, fontFamily: "'Noto Sans JP', sans-serif" }}>━━ 皿が流れています。気に入ったら取ってください ━━</div>
                 </div>
-                <ConveyorBelt posts={filteredPosts} likedIds={likedIds} onLike={handleLike} onUnlike={handleUnlike} onOpenComments={handleOpenComments} userId={userId} onDelete={handleDeletePost} forcePaused={showSettings} reducedMotion={reducedMotion} showSpoilers={showSpoilers} laneCount={laneCount} lane1Dir={lane1Dir} lane2Dir={lane2Dir} isMobile={isMobile} mobileDir={mobileConveyorDir} />
+                <ConveyorBelt posts={filteredPosts} likedIds={likedIds} onLike={handleLike} onUnlike={handleUnlike} onOpenComments={handleOpenComments} userId={userId} onDelete={handleDeletePost} forcePaused={showSettings} reducedMotion={reducedMotion} showSpoilers={showSpoilers} laneCount={laneCount} lane1Dir={lane1Dir} lane2Dir={lane2Dir} isMobile={isMobile} />
                 <div style={{ padding: "24px", borderTop: "1px solid #1a1a2a" }}>
                   <div style={{ color: "#333", fontSize: 11, letterSpacing: 2, fontFamily: "'Noto Sans JP', sans-serif", marginBottom: 16 }}>━━ 全ての皿 ━━</div>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 12 }}>
@@ -1332,7 +1328,7 @@ export default function App() {
       {/* Modals */}
       {commentPost && <CommentModal post={commentPost} onClose={() => { setCommentPost(null); setCommentFromBucket(null); }} likedIds={likedIds} userId={userId} fromBucket={commentFromBucket ?? undefined} onBackToBucket={commentFromBucket ? () => { setCommentPost(null); setViewingBucket(commentFromBucket); setCommentFromBucket(null); } : undefined} />}
       {showPost && <PostModal currentRoom={selected?.room} onClose={() => setShowPost(false)} onPosted={fetchPosts} userId={userId} />}
-      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} reducedMotion={reducedMotion} onToggleReducedMotion={() => setReducedMotion((v) => !v)} showSpoilers={showSpoilers} onToggleShowSpoilers={() => setShowSpoilers((v) => !v)} laneCount={laneCount} onSetLaneCount={setLaneCount} lane1Dir={lane1Dir} onSetLane1Dir={setLane1Dir} lane2Dir={lane2Dir} onSetLane2Dir={setLane2Dir} isMobile={isMobile} mobileConveyorDir={mobileConveyorDir} onSetMobileConveyorDir={setMobileConveyorDir} />}
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} reducedMotion={reducedMotion} onToggleReducedMotion={() => setReducedMotion((v) => !v)} showSpoilers={showSpoilers} onToggleShowSpoilers={() => setShowSpoilers((v) => !v)} laneCount={laneCount} onSetLaneCount={setLaneCount} lane1Dir={lane1Dir} onSetLane1Dir={setLane1Dir} lane2Dir={lane2Dir} onSetLane2Dir={setLane2Dir} isMobile={isMobile} />}
       {bucketTarget && (
         <BucketSelectorModal
           post={bucketTarget}
