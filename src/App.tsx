@@ -279,7 +279,7 @@ function PlateCard({
             onMouseEnter={(e) => { e.currentTarget.style.color = "#aaa"; e.currentTarget.style.borderColor = "#444"; }}
             onMouseLeave={(e) => { e.currentTarget.style.color = "#666"; e.currentTarget.style.borderColor = "#2a2a3a"; }}
           >
-            🍣 箱に入れる
+            🍱 箱に入れる
           </button>
         )}
       </div>
@@ -494,7 +494,7 @@ function CommentModal({ post, onClose, likedIds, userId, fromBucket, onBackToBuc
           <button onClick={onBackToBucket} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 20px", background: "rgba(255,255,255,0.03)", border: "none", borderBottom: "1px solid #1a1a2a", color: "#888", fontSize: 12, fontFamily: "'Noto Sans JP', sans-serif", cursor: "pointer", textAlign: "left", transition: "color 0.15s" }}
             onMouseEnter={(e) => (e.currentTarget.style.color = "#ccc")}
             onMouseLeave={(e) => (e.currentTarget.style.color = "#888")}>
-            ← 🍣 {fromBucket.name}
+            ← 🍱 {fromBucket.name}
           </button>
         )}
         <div style={{ padding: "16px 20px", borderBottom: "1px solid #222", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
@@ -801,7 +801,7 @@ function BucketSelectorModal({ post, buckets, userId, onClose, onBucketCreated, 
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.88)", zIndex: 110, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }} onClick={onClose}>
       <div style={{ background: "#0f0f1a", border: "1px solid #2a2a3a", borderRadius: 20, width: "100%", maxWidth: 380, overflow: "hidden" }} onClick={(e) => e.stopPropagation()}>
         <div style={{ padding: "16px 20px", borderBottom: "1px solid #1a1a2a", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span style={{ color: "#e0e0e0", fontFamily: "'Noto Sans JP', sans-serif", fontSize: 14, fontWeight: 700 }}>🍣 どの箱に入れますか？</span>
+          <span style={{ color: "#e0e0e0", fontFamily: "'Noto Sans JP', sans-serif", fontSize: 14, fontWeight: 700 }}>🍱 どの箱に入れますか？</span>
           <button onClick={onClose} style={{ background: "none", border: "none", color: "#666", fontSize: 20, cursor: "pointer" }}>✕</button>
         </div>
         <div style={{ padding: 16, maxHeight: 360, overflowY: "auto" }}>
@@ -813,7 +813,7 @@ function BucketSelectorModal({ post, buckets, userId, onClose, onBucketCreated, 
               style={{ padding: "12px 14px", background: "rgba(255,255,255,0.03)", border: "1px solid #1f1f2f", borderRadius: 10, marginBottom: 8, cursor: "pointer", color: "#ccc", fontSize: 13, fontFamily: "'Noto Sans JP', sans-serif", display: "flex", alignItems: "center", gap: 10, transition: "background 0.15s" }}
               onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.07)")}
               onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.03)")}>
-              <span style={{ fontSize: 18 }}>🍣</span>
+              <span style={{ fontSize: 18 }}>🍱</span>
               <span>{b.name}</span>
             </div>
           ))}
@@ -868,7 +868,7 @@ function BucketDetailModal({ bucket, userId, onClose, likedIds, onOpenComments }
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.88)", zIndex: 110, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }} onClick={onClose}>
       <div style={{ background: "#0f0f1a", border: "1px solid #2a2a3a", borderRadius: 20, width: "100%", maxWidth: 560, maxHeight: "80vh", overflow: "hidden", display: "flex", flexDirection: "column" }} onClick={(e) => e.stopPropagation()}>
         <div style={{ padding: "16px 20px", borderBottom: "1px solid #1a1a2a", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
-          <span style={{ color: "#e0e0e0", fontFamily: "'Noto Sans JP', sans-serif", fontSize: 14, fontWeight: 700 }}>🍣 {bucket.name}</span>
+          <span style={{ color: "#e0e0e0", fontFamily: "'Noto Sans JP', sans-serif", fontSize: 14, fontWeight: 700 }}>🍱 {bucket.name}</span>
           <button onClick={onClose} style={{ background: "none", border: "none", color: "#666", fontSize: 20, cursor: "pointer" }}>✕</button>
         </div>
         <div style={{ flex: 1, overflowY: "auto", padding: 16 }}>
@@ -924,7 +924,7 @@ function Sidebar({ categories, selected, onSelect, activePage, onChangePage }: {
       <div style={{ borderBottom: "1px solid #1a1a2a", padding: "8px 0" }}>
         {([
           ["home",       "🏠", "ホーム"],
-          ["collection", "🍣", "コレクション"],
+          ["collection", "🍱", "コレクション"],
         ] as [NavPage, string, string][]).map(([page, icon, label]) => (
           <div key={page} onClick={() => onChangePage(page)} style={{ padding: "9px 16px", display: "flex", alignItems: "center", gap: 8, cursor: "pointer", color: activePage === page ? "#c0392b" : "#555", fontSize: 13, fontFamily: "'Noto Sans JP', sans-serif", fontWeight: 600, background: activePage === page ? "rgba(192,57,43,0.08)" : "transparent", transition: "all 0.2s" }}>
             <span>{icon}</span><span>{label}</span>
@@ -978,7 +978,7 @@ function BottomNav({ activePage, onChangePage }: { activePage: NavPage; onChange
     <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "rgba(8,8,18,0.98)", borderTop: "1px solid #1a1a2a", display: "flex", zIndex: 50 }}>
       {([
         ["home",       "🏠", "ホーム"],
-        ["collection", "🍣", "コレクション"],
+        ["collection", "🍱", "コレクション"],
         ["settings",   "⚙️", "設定"],
       ] as [NavPage, string, string][]).map(([page, icon, label]) => (
         <div key={page} onClick={() => onChangePage(page)} style={{ flex: 1, padding: "10px 0 8px", display: "flex", flexDirection: "column", alignItems: "center", gap: 3, cursor: "pointer", color: activePage === page ? "#c0392b" : "#444" }}>
@@ -1180,7 +1180,7 @@ export default function App() {
             <div>
               <div style={{ color: "#e0e0e0", fontSize: 16, fontWeight: 700, fontFamily: "'Noto Serif JP', serif" }}>
                 {activePage === "collection"
-                  ? "🍣 コレクション"
+                  ? "🍱 コレクション"
                   : `${selected?.sub?.icon ?? ""} ${selected?.sub?.label ?? ""} › #${selected?.room ?? "ホーム"}`}
               </div>
               <div style={{ color: "#444", fontSize: 10, marginTop: 2 }}>
@@ -1288,7 +1288,7 @@ export default function App() {
                         onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.07)"; e.currentTarget.style.borderColor = "#333"; }}
                         onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.03)"; e.currentTarget.style.borderColor = "#1f1f2f"; }}>
                         <div onClick={() => setViewingBucket(b)} style={{ cursor: "pointer" }}>
-                          <div style={{ fontSize: 28, marginBottom: 8 }}>🍣</div>
+                          <div style={{ fontSize: 28, marginBottom: 8 }}>🍱</div>
                           <div style={{ color: "#ccc", fontSize: 13, fontFamily: "'Noto Sans JP', sans-serif", fontWeight: 600 }}>{b.name}</div>
                         </div>
                         <button
