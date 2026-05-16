@@ -311,7 +311,7 @@ function ConveyorBelt({ posts, likedIds, onLike, onUnlike, onOpenComments, userI
   const pos2Ref = useRef(0);
   const rafRef = useRef<number>(0);
 
-  const isVertical = !!isMobile && mobileDir !== "horizontal";
+  const isVertical = !!isMobile;
 
   useEffect(() => {
     const t1 = track1Ref.current;
@@ -689,46 +689,30 @@ function SettingsModal({ onClose, reducedMotion, onToggleReducedMotion, showSpoi
         </div>
         <div style={{ padding: 20 }}>
 
-          {/* スマホ専用: レーンの向き */}
-          {isMobile && (
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: "1px solid #1a1a2a" }}>
-              <span style={{ color: "#e0e0e0", fontSize: 13, fontFamily: "'Noto Sans JP', sans-serif" }}>レーンの向き</span>
-              <div style={{ display: "flex", gap: 4 }}>
-                {(["vertical", "horizontal"] as const).map((d) => (
-                  <button key={d} onClick={() => onSetMobileConveyorDir(d)} style={{ padding: "3px 10px", borderRadius: 8, border: `1px solid ${mobileConveyorDir === d ? "#e74c3c" : "#333"}`, background: mobileConveyorDir === d ? "rgba(192,57,43,0.2)" : "rgba(255,255,255,0.03)", color: mobileConveyorDir === d ? "#e74c3c" : "#666", fontSize: 11, cursor: "pointer", fontFamily: "'Noto Sans JP', sans-serif", fontWeight: 600 }}>
-                    {d === "vertical" ? "縦" : "横"}
-                  </button>
-                ))}
+          {/* レーン数・向き（PCのみ） */}
+          {!isMobile && (
+            <>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: "1px solid #1a1a2a" }}>
+                <span style={{ color: "#e0e0e0", fontSize: 13, fontFamily: "'Noto Sans JP', sans-serif" }}>流れるレーン数</span>
+                <div style={{ display: "flex", gap: 4 }}>
+                  {([1, 2] as const).map((n) => (
+                    <button key={n} onClick={() => onSetLaneCount(n)} style={{ padding: "3px 14px", borderRadius: 8, border: `1px solid ${laneCount === n ? "#e74c3c" : "#333"}`, background: laneCount === n ? "rgba(192,57,43,0.2)" : "rgba(255,255,255,0.03)", color: laneCount === n ? "#e74c3c" : "#666", fontSize: 12, cursor: "pointer", fontWeight: 700 }}>
+                      {n}本
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
-
-          {/* レーン数（スマホ横モードでは非表示） */}
-          {!(isMobile && mobileConveyorDir === "horizontal") && (
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: "1px solid #1a1a2a" }}>
-              <span style={{ color: "#e0e0e0", fontSize: 13, fontFamily: "'Noto Sans JP', sans-serif" }}>流れるレーン数</span>
-              <div style={{ display: "flex", gap: 4 }}>
-                {([1, 2] as const).map((n) => (
-                  <button key={n} onClick={() => onSetLaneCount(n)} style={{ padding: "3px 14px", borderRadius: 8, border: `1px solid ${laneCount === n ? "#e74c3c" : "#333"}`, background: laneCount === n ? "rgba(192,57,43,0.2)" : "rgba(255,255,255,0.03)", color: laneCount === n ? "#e74c3c" : "#666", fontSize: 12, cursor: "pointer", fontWeight: 700 }}>
-                    {n}本
-                  </button>
-                ))}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: "1px solid #1a1a2a" }}>
+                <span style={{ color: "#e0e0e0", fontSize: 13, fontFamily: "'Noto Sans JP', sans-serif" }}>1本目の向き</span>
+                <DirSelect value={lane1Dir} onChange={onSetLane1Dir} />
               </div>
-            </div>
-          )}
-
-          {/* 1本目の向き */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: "1px solid #1a1a2a" }}>
-            <span style={{ color: "#e0e0e0", fontSize: 13, fontFamily: "'Noto Sans JP', sans-serif" }}>1本目の向き</span>
-            <DirSelect value={lane1Dir} onChange={onSetLane1Dir} />
-          </div>
-
-          {/* 2本目の向き（2レーン時のみ） */}
-          {laneCount === 2 && (
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: "1px solid #1a1a2a" }}>
-              <span style={{ color: "#e0e0e0", fontSize: 13, fontFamily: "'Noto Sans JP', sans-serif" }}>2本目の向き</span>
-              <DirSelect value={lane2Dir} onChange={onSetLane2Dir} />
-            </div>
+              {laneCount === 2 && (
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: "1px solid #1a1a2a" }}>
+                  <span style={{ color: "#e0e0e0", fontSize: 13, fontFamily: "'Noto Sans JP', sans-serif" }}>2本目の向き</span>
+                  <DirSelect value={lane2Dir} onChange={onSetLane2Dir} />
+                </div>
+              )}
+            </>
           )}
 
           {/* ネタバレを表示 */}
