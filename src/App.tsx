@@ -367,12 +367,15 @@ function ConveyorBelt({ posts, likedIds, onLike, onUnlike, onOpenComments, userI
     );
   }
 
+  const twoLane = (laneCount ?? 2) === 2;
+  const mobileHoriz = !!isMobile;
+
   return (
-    <div style={{ position: "relative", overflow: "hidden", padding: isMobile ? "4px 0 8px" : "20px 0" }}
+    <div style={{ position: "relative", overflow: "hidden", ...(mobileHoriz ? { height: "54vh" } : { padding: "20px 0" }) }}
       onMouseEnter={() => setHoverPaused(true)} onMouseLeave={() => setHoverPaused(false)}
       onClick={() => setTouchPaused((v) => !v)}>
       {/* レーン1: 右から左 */}
-      <div style={{ position: "relative", marginBottom: isMobile ? 8 : 16 }}>
+      <div style={{ position: "relative", overflow: "hidden", ...(mobileHoriz && twoLane ? { height: "calc(50% - 4px)", marginBottom: 8 } : { marginBottom: 16 }) }}>
         <div ref={track1Ref} style={{ display: "flex", gap: 16, width: "max-content", padding: "0 16px" }}>
           {doubled.map((post, i) => (
             <PlateCard key={`l1-${post.id}-${i}`} post={post} isLiked={likedIds.has(post.id)} onLike={onLike} onUnlike={onUnlike} onOpenComments={onOpenComments} userId={userId} onDelete={onDelete} reducedMotion={reducedMotion} showSpoilers={showSpoilers} />
@@ -380,8 +383,8 @@ function ConveyorBelt({ posts, likedIds, onLike, onUnlike, onOpenComments, userI
         </div>
       </div>
       {/* レーン2 */}
-      {(laneCount ?? 2) === 2 && (
-        <div style={{ position: "relative" }}>
+      {twoLane && (
+        <div style={{ position: "relative", overflow: "hidden", ...(mobileHoriz ? { height: "calc(50% - 4px)" } : {}) }}>
           <div ref={track2Ref} style={{ display: "flex", gap: 16, width: "max-content", padding: "0 16px" }}>
             {doubled.map((post, i) => (
               <PlateCard key={`l2-${post.id}-${i}`} post={post} isLiked={likedIds.has(post.id)} onLike={onLike} onUnlike={onUnlike} onOpenComments={onOpenComments} userId={userId} onDelete={onDelete} reducedMotion={reducedMotion} showSpoilers={showSpoilers} />
