@@ -368,11 +368,11 @@ function ConveyorBelt({ posts, likedIds, onLike, onUnlike, onOpenComments, userI
   }
 
   return (
-    <div style={{ position: "relative", overflow: "hidden", padding: "20px 0" }}
+    <div style={{ position: "relative", overflowX: "hidden", padding: isMobile ? "8px 0" : "20px 0" }}
       onMouseEnter={() => setHoverPaused(true)} onMouseLeave={() => setHoverPaused(false)}
       onClick={() => setTouchPaused((v) => !v)}>
       {/* レーン1: 右から左 */}
-      <div style={{ position: "relative", marginBottom: 16 }}>
+      <div style={{ position: "relative", marginBottom: isMobile ? 8 : 16 }}>
         <div ref={track1Ref} style={{ display: "flex", gap: 16, width: "max-content", padding: "0 16px" }}>
           {doubled.map((post, i) => (
             <PlateCard key={`l1-${post.id}-${i}`} post={post} isLiked={likedIds.has(post.id)} onLike={onLike} onUnlike={onUnlike} onOpenComments={onOpenComments} userId={userId} onDelete={onDelete} reducedMotion={reducedMotion} showSpoilers={showSpoilers} />
