@@ -995,7 +995,7 @@ function StatsBar({ posts, likedIds }: { posts: Post[]; likedIds: Set<number> })
   return (
     <div style={{ display: "flex", gap: 0, borderBottom: "1px solid #1a1a2a", background: "rgba(5,5,12,0.9)" }}>
       {([
-        ["🥢", "総皿数",   posts.length],
+        ["🍽️", "総皿数",   posts.length],
         ["✅", "取った皿", likedIds.size],
         ["✨", "金皿",     goldCount],
       ] as [string, string, number][]).map(([icon, label, val]) => (
