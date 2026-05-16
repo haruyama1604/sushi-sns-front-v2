@@ -144,7 +144,7 @@ function PlateCard({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ user_id: userId }),
     }).then((res) => {
-      if (res.ok) onDelete?.(post.id);
+      if (res.ok || res.status === 404) onDelete?.(post.id);
       else setConfirming(false);
     }).catch(() => setConfirming(false));
   };
