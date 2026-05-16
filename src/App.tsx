@@ -201,7 +201,7 @@ function PlateCard({
           <div style={{ color: "#e0e0e0", fontSize: 13, fontWeight: 700, fontFamily: "'Noto Sans JP', sans-serif" }}>本当に取り消しますか？</div>
           <div style={{ display: "flex", gap: 10 }} onClick={(e) => e.stopPropagation()}>
             <button
-              onClick={() => { handleDeleteConfirm(); onConfirming?.(false); }}
+              onClick={() => { setConfirming(false); onConfirming?.(false); handleDeleteConfirm(); }}
               style={{ padding: "7px 20px", background: "rgba(192,57,43,0.3)", border: "1px solid #e74c3c", borderRadius: 10, color: "#e74c3c", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'Noto Sans JP', sans-serif", transition: "all 0.2s" }}
               onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(192,57,43,0.55)"; }}
               onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(192,57,43,0.3)"; }}
