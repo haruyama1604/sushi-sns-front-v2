@@ -107,6 +107,7 @@ function PlateCard({
   reducedMotion,
   showSpoilers,
   fullWidth,
+  onConfirming,
 }: {
   post: Post;
   onLike: (id: number) => void;
@@ -119,6 +120,7 @@ function PlateCard({
   reducedMotion?: boolean;
   showSpoilers?: boolean;
   fullWidth?: boolean;
+  onConfirming?: (v: boolean) => void;
 }) {
   const tier = TIER_CONFIG[post.tier];
   const [animating, setAnimating] = useState(false);
@@ -179,7 +181,7 @@ function PlateCard({
           </div>
           {onDelete && (
             <button
-              onClick={(e) => { e.stopPropagation(); setConfirming(true); }}
+              onClick={(e) => { e.stopPropagation(); setConfirming(true); onConfirming?.(true); }}
               style={{ background: "rgba(192,57,43,0.15)", border: "1px solid rgba(192,57,43,0.4)", color: "#e74c3c", fontSize: 9, fontWeight: 700, padding: "2px 7px", borderRadius: 20, cursor: "pointer", fontFamily: "'Noto Sans JP', sans-serif", transition: "all 0.2s" }}
               onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(192,57,43,0.35)"; }}
               onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(192,57,43,0.15)"; }}
@@ -194,12 +196,12 @@ function PlateCard({
       {confirming && (
         <div
           style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.75)", borderRadius: 16, zIndex: 10, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, backdropFilter: "blur(4px)" }}
-          onClick={() => setConfirming(false)}
+          onClick={() => { setConfirming(false); onConfirming?.(false); }}
         >
           <div style={{ color: "#e0e0e0", fontSize: 13, fontWeight: 700, fontFamily: "'Noto Sans JP', sans-serif" }}>本当に取り消しますか？</div>
           <div style={{ display: "flex", gap: 10 }} onClick={(e) => e.stopPropagation()}>
             <button
-              onClick={handleDeleteConfirm}
+              onClick={() => { handleDeleteConfirm(); onConfirming?.(false); }}
               style={{ padding: "7px 20px", background: "rgba(192,57,43,0.3)", border: "1px solid #e74c3c", borderRadius: 10, color: "#e74c3c", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'Noto Sans JP', sans-serif", transition: "all 0.2s" }}
               onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(192,57,43,0.55)"; }}
               onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(192,57,43,0.3)"; }}
@@ -207,7 +209,7 @@ function PlateCard({
               はい
             </button>
             <button
-              onClick={() => setConfirming(false)}
+              onClick={() => { setConfirming(false); onConfirming?.(false); }}
               style={{ padding: "7px 20px", background: "rgba(255,255,255,0.06)", border: "1px solid #333", borderRadius: 10, color: "#aaa", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'Noto Sans JP', sans-serif", transition: "all 0.2s" }}
               onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.12)"; }}
               onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; }}
@@ -305,7 +307,8 @@ function ConveyorBelt({ posts, likedIds, onLike, onUnlike, onOpenComments, userI
   const track2Ref = useRef<HTMLDivElement>(null);
   const [hoverPaused, setHoverPaused] = useState(false);
   const [touchPaused, setTouchPaused] = useState(false);
-  const paused = hoverPaused || touchPaused || !!forcePaused;
+  const [confirmPaused, setConfirmPaused] = useState(false);
+  const paused = hoverPaused || touchPaused || confirmPaused || !!forcePaused;
   const pos1Ref = useRef(0);
   const pos2Ref = useRef(0);
   const rafRef = useRef<number>(0);
@@ -357,7 +360,7 @@ function ConveyorBelt({ posts, likedIds, onLike, onUnlike, onOpenComments, userI
         onClick={() => setTouchPaused((v) => !v)}>
         <div ref={track1Ref} style={{ display: "flex", flexDirection: "column", gap: 16, height: "max-content", padding: "16px 16px", width: "100%", boxSizing: "border-box" }}>
           {doubled.map((post, i) => (
-            <PlateCard key={`v-${post.id}-${i}`} post={post} isLiked={likedIds.has(post.id)} onLike={onLike} onUnlike={onUnlike} onOpenComments={onOpenComments} userId={userId} onDelete={onDelete} reducedMotion={reducedMotion} showSpoilers={showSpoilers} fullWidth />
+            <PlateCard key={`v-${post.id}-${i}`} post={post} isLiked={likedIds.has(post.id)} onLike={onLike} onUnlike={onUnlike} onOpenComments={onOpenComments} userId={userId} onDelete={onDelete} reducedMotion={reducedMotion} showSpoilers={showSpoilers} fullWidth onConfirming={setConfirmPaused} />
           ))}
         </div>
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 80, background: "linear-gradient(180deg, #0a0a12, transparent)", zIndex: 2, pointerEvents: "none" }} />
@@ -374,7 +377,7 @@ function ConveyorBelt({ posts, likedIds, onLike, onUnlike, onOpenComments, userI
       <div style={{ position: "relative", overflow: "hidden", marginBottom: isMobile ? 8 : 16 }}>
         <div ref={track1Ref} style={{ display: "flex", gap: 16, width: "max-content", padding: "0 16px" }}>
           {doubled.map((post, i) => (
-            <PlateCard key={`l1-${post.id}-${i}`} post={post} isLiked={likedIds.has(post.id)} onLike={onLike} onUnlike={onUnlike} onOpenComments={onOpenComments} userId={userId} onDelete={onDelete} reducedMotion={reducedMotion} showSpoilers={showSpoilers} />
+            <PlateCard key={`l1-${post.id}-${i}`} post={post} isLiked={likedIds.has(post.id)} onLike={onLike} onUnlike={onUnlike} onOpenComments={onOpenComments} userId={userId} onDelete={onDelete} reducedMotion={reducedMotion} showSpoilers={showSpoilers} onConfirming={setConfirmPaused} />
           ))}
         </div>
       </div>
@@ -383,7 +386,7 @@ function ConveyorBelt({ posts, likedIds, onLike, onUnlike, onOpenComments, userI
         <div style={{ position: "relative", overflow: "hidden" }}>
           <div ref={track2Ref} style={{ display: "flex", gap: 16, width: "max-content", padding: "0 16px" }}>
             {doubled.map((post, i) => (
-              <PlateCard key={`l2-${post.id}-${i}`} post={post} isLiked={likedIds.has(post.id)} onLike={onLike} onUnlike={onUnlike} onOpenComments={onOpenComments} userId={userId} onDelete={onDelete} reducedMotion={reducedMotion} showSpoilers={showSpoilers} />
+              <PlateCard key={`l2-${post.id}-${i}`} post={post} isLiked={likedIds.has(post.id)} onLike={onLike} onUnlike={onUnlike} onOpenComments={onOpenComments} userId={userId} onDelete={onDelete} reducedMotion={reducedMotion} showSpoilers={showSpoilers} onConfirming={setConfirmPaused} />
             ))}
           </div>
         </div>
