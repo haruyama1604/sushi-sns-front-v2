@@ -979,7 +979,6 @@ function StatsBar({ posts, likedIds }: { posts: Post[]; likedIds: Set<number> })
         ["🍽", "総皿数",   posts.length],
         ["✅", "取った皿", likedIds.size],
         ["✨", "金皿",     goldCount],
-        ["🔒", "解錠済み", likedIds.size],
       ] as [string, string, number][]).map(([icon, label, val]) => (
         <div key={label} style={{ flex: 1, padding: "10px 0", textAlign: "center", borderRight: "1px solid #1a1a2a" }}>
           <div style={{ fontSize: 16 }}>{icon}</div>
@@ -1150,7 +1149,6 @@ export default function App() {
                   ["🍽", posts.length],
                   ["✅", likedIds.size],
                   ["✨", posts.filter((p) => p.tier === "gold").length],
-                  ["🔒", likedIds.size],
                 ] as [string, number][]).map(([icon, val]) => (
                   <div key={icon} style={{ textAlign: "center" }}>
                     <div style={{ fontSize: 11 }}>{icon}</div>
