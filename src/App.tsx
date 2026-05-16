@@ -463,6 +463,15 @@ function CommentModal({ post, onClose, likedIds, userId, fromBucket, onBackToBuc
     setReplies((prev) => ({ ...prev, [commentId]: (prev[commentId] ?? []).filter((r) => r.id !== replyId) }));
   };
 
+  const handleDeleteComment = async (commentId: number) => {
+    await fetch(`${API_BASE}/comments/${commentId}`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user_id: userId }),
+    });
+    setComments((prev) => prev.filter((c) => c.id !== commentId));
+  };
+
   const submit = async () => {
     if (!input.trim()) return;
     const newComment: Comment = await fetch(`${API_BASE}/posts/${post.id}/comments`, {
@@ -507,6 +516,13 @@ function CommentModal({ post, onClose, likedIds, userId, fromBucket, onBackToBuc
                 <span style={{ fontSize: 16, marginTop: 2 }}>💬</span>
                 <div style={{ flex: 1 }}>
                   <div style={{ background: "rgba(255,255,255,0.03)", borderRadius: 12, padding: "8px 12px", border: "1px solid #1f1f2f", position: "relative" }}>
+                    {c.user_id === userId && (
+                      <button
+                        onClick={() => handleDeleteComment(c.id)}
+                        style={{ position: "absolute", top: 4, right: 6, background: "none", border: "none", color: "#333", fontSize: 11, cursor: "pointer", padding: "1px 3px", transition: "color 0.15s" }}
+                        onMouseEnter={(e) => (e.currentTarget.style.color = "#e74c3c")}
+                        onMouseLeave={(e) => (e.currentTarget.style.color = "#333")}>🗑</button>
+                    )}
                     <div style={{ color: "#555", fontSize: 10, fontFamily: "'Noto Sans JP', sans-serif", marginBottom: 4 }}>
                       {c.user_id === "system" ? "運営" : "ユーザー"} · {c.created_at.slice(0, 16).replace("T", " ")}
                     </div>
