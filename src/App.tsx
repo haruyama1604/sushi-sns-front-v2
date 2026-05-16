@@ -392,7 +392,7 @@ function ConveyorBelt({ posts, likedIds, onLike, onUnlike, onOpenComments, userI
   );
 }
 
-function CommentModal({ post, onClose, likedIds, userId }: { post: Post; onClose: () => void; likedIds: Set<number>; userId: string }) {
+function CommentModal({ post, onClose, likedIds, userId, fromBucket, onBackToBucket }: { post: Post; onClose: () => void; likedIds: Set<number>; userId: string; fromBucket?: Bucket; onBackToBucket?: () => void }) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [replies, setReplies] = useState<Record<number, Reply[]>>({});
   const [input, setInput] = useState("");
@@ -476,6 +476,13 @@ function CommentModal({ post, onClose, likedIds, userId }: { post: Post; onClose
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }} onClick={onClose}>
       <div style={{ background: "#0f0f1a", border: "1px solid #333", borderRadius: 20, width: "100%", maxWidth: 540, maxHeight: "85vh", overflow: "hidden", display: "flex", flexDirection: "column" }} onClick={(e) => e.stopPropagation()}>
+        {fromBucket && onBackToBucket && (
+          <button onClick={onBackToBucket} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 20px", background: "rgba(255,255,255,0.03)", border: "none", borderBottom: "1px solid #1a1a2a", color: "#888", fontSize: 12, fontFamily: "'Noto Sans JP', sans-serif", cursor: "pointer", textAlign: "left", transition: "color 0.15s" }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = "#ccc")}
+            onMouseLeave={(e) => (e.currentTarget.style.color = "#888")}>
+            ← 📦 {fromBucket.name}
+          </button>
+        )}
         <div style={{ padding: "16px 20px", borderBottom: "1px solid #222", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
           <span style={{ color: "#e0e0e0", fontFamily: "'Noto Sans JP', sans-serif", fontSize: 14, fontWeight: 700 }}>
             💬 コメント欄 — <span style={{ color: "#888", fontWeight: 400 }}>{post.room || "フリー"}</span>
@@ -869,7 +876,7 @@ function BucketDetailModal({ bucket, userId, onClose, likedIds, onOpenComments }
               <div key={post.id} style={{ background: tier.cardBg, border: `1px solid ${tier.border}33`, borderRadius: 12, padding: "12px 14px", marginBottom: 10, display: "flex", gap: 12, alignItems: "flex-start" }}>
                 <div
                   style={{ flex: 1, cursor: "pointer" }}
-                  onClick={() => { onOpenComments(post); onClose(); }}
+                  onClick={() => onOpenComments(post)}
                 >
                   <div style={{ color: "#666", fontSize: 10, fontFamily: "'Noto Sans JP', sans-serif", marginBottom: 4, display: "flex", alignItems: "center", gap: 8 }}>
                     <span>#{post.room || "フリー"}</span>
@@ -1007,6 +1014,7 @@ export default function App() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [likedIds, setLikedIds] = useState<Set<number>>(new Set());
   const [commentPost, setCommentPost] = useState<Post | null>(null);
+  const [commentFromBucket, setCommentFromBucket] = useState<Bucket | null>(null);
   const [showPost, setShowPost] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
@@ -1333,7 +1341,7 @@ export default function App() {
       {isMobile && <BottomNav activePage={activePage} onChangePage={handleChangePage} />}
 
       {/* Modals */}
-      {commentPost && <CommentModal post={commentPost} onClose={() => setCommentPost(null)} likedIds={likedIds} userId={userId} />}
+      {commentPost && <CommentModal post={commentPost} onClose={() => { setCommentPost(null); setCommentFromBucket(null); }} likedIds={likedIds} userId={userId} fromBucket={commentFromBucket ?? undefined} onBackToBucket={commentFromBucket ? () => { setCommentPost(null); setViewingBucket(commentFromBucket); setCommentFromBucket(null); } : undefined} />}
       {showPost && <PostModal currentRoom={selected?.room} onClose={() => setShowPost(false)} onPosted={fetchPosts} userId={userId} />}
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} reducedMotion={reducedMotion} onToggleReducedMotion={() => setReducedMotion((v) => !v)} showSpoilers={showSpoilers} onToggleShowSpoilers={() => setShowSpoilers((v) => !v)} laneCount={laneCount} onSetLaneCount={setLaneCount} lane1Dir={lane1Dir} onSetLane1Dir={setLane1Dir} lane2Dir={lane2Dir} onSetLane2Dir={setLane2Dir} isMobile={isMobile} mobileConveyorDir={mobileConveyorDir} onSetMobileConveyorDir={setMobileConveyorDir} />}
       {bucketTarget && (
@@ -1352,7 +1360,11 @@ export default function App() {
           userId={userId}
           onClose={() => setViewingBucket(null)}
           likedIds={likedIds}
-          onOpenComments={handleOpenComments}
+          onOpenComments={(post) => {
+            setCommentFromBucket(viewingBucket);
+            setCommentPost(post);
+            setViewingBucket(null);
+          }}
         />
       )}
     </div>
