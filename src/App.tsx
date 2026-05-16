@@ -827,10 +827,12 @@ function BucketSelectorModal({ post, buckets, userId, onClose, onBucketCreated, 
   );
 }
 
-function BucketDetailModal({ bucket, userId, onClose }: {
+function BucketDetailModal({ bucket, userId, onClose, likedIds, onOpenComments }: {
   bucket: Bucket;
   userId: string;
   onClose: () => void;
+  likedIds: Set<number>;
+  onOpenComments: (post: Post) => void;
 }) {
   const [bucketPosts, setBucketPosts] = useState<Post[]>([]);
 
@@ -865,11 +867,17 @@ function BucketDetailModal({ bucket, userId, onClose }: {
             const tier = TIER_CONFIG[post.tier ?? "normal"];
             return (
               <div key={post.id} style={{ background: tier.cardBg, border: `1px solid ${tier.border}33`, borderRadius: 12, padding: "12px 14px", marginBottom: 10, display: "flex", gap: 12, alignItems: "flex-start" }}>
-                <div style={{ flex: 1 }}>
+                <div
+                  style={{ flex: 1, cursor: "pointer" }}
+                  onClick={() => { onOpenComments(post); onClose(); }}
+                >
                   <div style={{ color: "#666", fontSize: 10, fontFamily: "'Noto Sans JP', sans-serif", marginBottom: 4 }}>
-                    {tier.label} · #{post.room || "フリー"}
+                    #{post.room || "フリー"}
                   </div>
-                  <p style={{ color: "#ccc", fontSize: 13, margin: 0, fontFamily: "'Noto Sans JP', sans-serif", lineHeight: 1.65 }}>{post.content}</p>
+                  <p style={{ color: "#ccc", fontSize: 13, margin: 0, marginBottom: 8, fontFamily: "'Noto Sans JP', sans-serif", lineHeight: 1.65 }}>{post.content}</p>
+                  <div style={{ color: likedIds.has(post.id) ? tier.glow : "#555", fontSize: 11, fontFamily: "'Noto Sans JP', sans-serif" }}>
+                    🍽 {post.likes} 取られた
+                  </div>
                 </div>
                 <button onClick={() => removePost(post.id)}
                   style={{ background: "rgba(255,255,255,0.03)", border: "1px solid #2a2a3a", borderRadius: 8, color: "#555", fontSize: 11, cursor: "pointer", padding: "5px 10px", fontFamily: "'Noto Sans JP', sans-serif", flexShrink: 0, transition: "all 0.15s" }}
@@ -1345,6 +1353,8 @@ export default function App() {
           bucket={viewingBucket}
           userId={userId}
           onClose={() => setViewingBucket(null)}
+          likedIds={likedIds}
+          onOpenComments={handleOpenComments}
         />
       )}
     </div>
