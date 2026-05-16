@@ -353,7 +353,8 @@ function ConveyorBelt({ posts, likedIds, onLike, onUnlike, onOpenComments, userI
 
   if (isVertical) {
     return (
-      <div style={{ position: "relative", overflow: "hidden", height: "65vh" }}>
+      <div style={{ position: "relative", overflow: "hidden", height: "65vh" }}
+        onTouchStart={() => setHoverPaused(true)} onTouchEnd={() => setHoverPaused(false)}>
         <div ref={track1Ref} style={{ display: "flex", flexDirection: "column", gap: 16, height: "max-content", padding: "16px 16px", width: "100%", boxSizing: "border-box" }}>
           {doubled.map((post, i) => (
             <PlateCard key={`v-${post.id}-${i}`} post={post} isLiked={likedIds.has(post.id)} onLike={onLike} onUnlike={onUnlike} onOpenComments={onOpenComments} userId={userId} onDelete={onDelete} reducedMotion={reducedMotion} showSpoilers={showSpoilers} fullWidth />
@@ -367,7 +368,8 @@ function ConveyorBelt({ posts, likedIds, onLike, onUnlike, onOpenComments, userI
 
   return (
     <div style={{ position: "relative", overflow: "hidden", padding: "20px 0" }}
-      onMouseEnter={() => setHoverPaused(true)} onMouseLeave={() => setHoverPaused(false)}>
+      onMouseEnter={() => setHoverPaused(true)} onMouseLeave={() => setHoverPaused(false)}
+      onTouchStart={() => setHoverPaused(true)} onTouchEnd={() => setHoverPaused(false)}>
       {/* レーン1: 右から左 */}
       <div style={{ position: "relative", marginBottom: 16 }}>
         <div ref={track1Ref} style={{ display: "flex", gap: 16, width: "max-content", padding: "0 16px" }}>
