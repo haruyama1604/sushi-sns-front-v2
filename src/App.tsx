@@ -524,7 +524,7 @@ function CommentModal({ post, onClose, likedIds, userId, fromBucket, onBackToBuc
                         onMouseLeave={(e) => (e.currentTarget.style.color = "#c0392b")}>🗑</button>
                     )}
                     <div style={{ color: "#555", fontSize: 10, fontFamily: "'Noto Sans JP', sans-serif", marginBottom: 4 }}>
-                      {c.user_id === "system" ? "運営" : "ユーザー"} · {c.created_at.slice(0, 16).replace("T", " ")}
+                      {c.user_id === "system" ? "運営" : c.user_id === userId ? "あなた" : "ユーザー"} · {c.created_at.slice(0, 16).replace("T", " ")}
                     </div>
                     <p style={{ color: "#bbb", fontSize: 13, margin: 0, fontFamily: "'Noto Sans JP', sans-serif", lineHeight: 1.6 }}>{c.text}</p>
                   </div>
@@ -557,7 +557,7 @@ function CommentModal({ post, onClose, likedIds, userId, fromBucket, onBackToBuc
                             onMouseLeave={(e) => (e.currentTarget.style.color = "#c0392b")}>🗑</button>
                         )}
                         <div style={{ color: "#555", fontSize: 10, fontFamily: "'Noto Sans JP', sans-serif", marginBottom: 3 }}>
-                          {r.user_id === "system" ? "運営" : "ユーザー"} · {r.created_at.slice(0, 16).replace("T", " ")}
+                          {r.user_id === "system" ? "運営" : r.user_id === userId ? "あなた" : "ユーザー"} · {r.created_at.slice(0, 16).replace("T", " ")}
                         </div>
                         <p style={{ color: "#aaa", fontSize: 12, margin: 0, fontFamily: "'Noto Sans JP', sans-serif", lineHeight: 1.55 }}>{r.text}</p>
                       </div>
