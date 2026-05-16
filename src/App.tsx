@@ -871,13 +871,11 @@ function BucketDetailModal({ bucket, userId, onClose, likedIds, onOpenComments }
                   style={{ flex: 1, cursor: "pointer" }}
                   onClick={() => { onOpenComments(post); onClose(); }}
                 >
-                  <div style={{ color: "#666", fontSize: 10, fontFamily: "'Noto Sans JP', sans-serif", marginBottom: 4 }}>
-                    #{post.room || "フリー"}
+                  <div style={{ color: "#666", fontSize: 10, fontFamily: "'Noto Sans JP', sans-serif", marginBottom: 4, display: "flex", alignItems: "center", gap: 8 }}>
+                    <span>#{post.room || "フリー"}</span>
+                    <span style={{ color: likedIds.has(post.id) ? tier.glow : "#555" }}>🍽 {post.likes}</span>
                   </div>
-                  <p style={{ color: "#ccc", fontSize: 13, margin: 0, marginBottom: 8, fontFamily: "'Noto Sans JP', sans-serif", lineHeight: 1.65 }}>{post.content}</p>
-                  <div style={{ color: likedIds.has(post.id) ? tier.glow : "#555", fontSize: 11, fontFamily: "'Noto Sans JP', sans-serif" }}>
-                    🍽 {post.likes} 取られた
-                  </div>
+                  <p style={{ color: "#ccc", fontSize: 13, margin: 0, fontFamily: "'Noto Sans JP', sans-serif", lineHeight: 1.65 }}>{post.content}</p>
                 </div>
                 <button onClick={() => removePost(post.id)}
                   style={{ background: "rgba(255,255,255,0.03)", border: "1px solid #2a2a3a", borderRadius: 8, color: "#555", fontSize: 11, cursor: "pointer", padding: "5px 10px", fontFamily: "'Noto Sans JP', sans-serif", flexShrink: 0, transition: "all 0.15s" }}
