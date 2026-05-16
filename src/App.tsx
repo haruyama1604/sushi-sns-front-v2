@@ -76,8 +76,8 @@ type TierConfig = { bg: string; border: string; glow: string; label: string; car
 
 const TIER_CONFIG: Record<Tier, TierConfig> = {
   gold:   { bg: "#f39c12", border: "#f1c40f", glow: "#f1c40f", label: "✨ 金皿", cardBg: "rgba(243,156,18,0.08)" },
-  silver: { bg: "#95a5a6", border: "#bdc3c7", glow: "#bdc3c7", label: "🍽 銀皿", cardBg: "rgba(149,165,166,0.06)" },
-  normal: { bg: "#c0392b", border: "#e74c3c", glow: "#e74c3c", label: "🍽 赤皿", cardBg: "rgba(192,57,43,0.05)" },
+  silver: { bg: "#95a5a6", border: "#bdc3c7", glow: "#bdc3c7", label: "🥢 銀皿", cardBg: "rgba(149,165,166,0.06)" },
+  normal: { bg: "#c0392b", border: "#e74c3c", glow: "#e74c3c", label: "🥢 赤皿", cardBg: "rgba(192,57,43,0.05)" },
 };
 
 // ============================================================
@@ -241,7 +241,7 @@ function PlateCard({
       <div style={{ padding: "42px 16px 14px 16px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
           <div style={{ fontSize: 22, width: 40, height: 40, background: "rgba(255,255,255,0.05)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", border: `1px solid ${tier.border}33` }}>
-            🍣
+            {post.user_id === "system" ? "👤" : "🍣"}
           </div>
           <div>
             <div style={{ color: "#e0e0e0", fontSize: 12, fontWeight: 600, fontFamily: "'Noto Sans JP', sans-serif" }}>
@@ -263,7 +263,7 @@ function PlateCard({
             onClick={handleLike}
             style={{ flex: 1, padding: "8px 0", background: isLiked ? `${tier.bg}33` : "rgba(255,255,255,0.04)", border: `1px solid ${isLiked ? tier.glow : "#333"}`, borderRadius: 10, color: isLiked ? tier.glow : "#888", fontSize: 12, cursor: "pointer", fontFamily: "'Noto Sans JP', sans-serif", fontWeight: 600, transition: rm ? "none" : "all 0.3s", transform: (!rm && animating) ? "scale(1.1)" : "scale(1)" }}
           >
-            {isLiked ? "✅" : "🍽"} {post.likes}
+            {isLiked ? "✅" : "🥢"} {post.likes}
           </button>
           <button
             onClick={() => onOpenComments(post)}
@@ -279,7 +279,7 @@ function PlateCard({
             onMouseEnter={(e) => { e.currentTarget.style.color = "#aaa"; e.currentTarget.style.borderColor = "#444"; }}
             onMouseLeave={(e) => { e.currentTarget.style.color = "#666"; e.currentTarget.style.borderColor = "#2a2a3a"; }}
           >
-            📦 桶に入れる
+            🍣 箱に入れる
           </button>
         )}
       </div>
@@ -494,7 +494,7 @@ function CommentModal({ post, onClose, likedIds, userId, fromBucket, onBackToBuc
           <button onClick={onBackToBucket} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 20px", background: "rgba(255,255,255,0.03)", border: "none", borderBottom: "1px solid #1a1a2a", color: "#888", fontSize: 12, fontFamily: "'Noto Sans JP', sans-serif", cursor: "pointer", textAlign: "left", transition: "color 0.15s" }}
             onMouseEnter={(e) => (e.currentTarget.style.color = "#ccc")}
             onMouseLeave={(e) => (e.currentTarget.style.color = "#888")}>
-            ← 📦 {fromBucket.name}
+            ← 🍣 {fromBucket.name}
           </button>
         )}
         <div style={{ padding: "16px 20px", borderBottom: "1px solid #222", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
@@ -629,7 +629,7 @@ function PostModal({ currentRoom, onClose, onPosted, userId }: { currentRoom: st
       <div style={{ background: "#0f0f1a", border: "1px solid #444", borderRadius: 20, width: "100%", maxWidth: 480, overflow: "hidden" }} onClick={(e) => e.stopPropagation()}>
         <div style={{ padding: "16px 20px", borderBottom: "1px solid #222", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
           <span style={{ color: "#e0e0e0", fontFamily: "'Noto Sans JP', sans-serif", fontSize: 14, fontWeight: 700, flexShrink: 0 }}>
-            🍽 皿に乗せる — <span style={{ color: "#c0392b" }}>#{currentRoom || "ルームを選択"}</span>
+            🥢 皿に乗せる — <span style={{ color: "#c0392b" }}>#{currentRoom || "ルームを選択"}</span>
           </span>
           <button
             onClick={() => setIsSpoiler((v) => !v)}
@@ -801,30 +801,30 @@ function BucketSelectorModal({ post, buckets, userId, onClose, onBucketCreated, 
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.88)", zIndex: 110, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }} onClick={onClose}>
       <div style={{ background: "#0f0f1a", border: "1px solid #2a2a3a", borderRadius: 20, width: "100%", maxWidth: 380, overflow: "hidden" }} onClick={(e) => e.stopPropagation()}>
         <div style={{ padding: "16px 20px", borderBottom: "1px solid #1a1a2a", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span style={{ color: "#e0e0e0", fontFamily: "'Noto Sans JP', sans-serif", fontSize: 14, fontWeight: 700 }}>📦 どの桶に入れますか？</span>
+          <span style={{ color: "#e0e0e0", fontFamily: "'Noto Sans JP', sans-serif", fontSize: 14, fontWeight: 700 }}>🍣 どの箱に入れますか？</span>
           <button onClick={onClose} style={{ background: "none", border: "none", color: "#666", fontSize: 20, cursor: "pointer" }}>✕</button>
         </div>
         <div style={{ padding: 16, maxHeight: 360, overflowY: "auto" }}>
           {buckets.length === 0 && (
-            <div style={{ color: "#444", fontSize: 12, fontFamily: "'Noto Sans JP', sans-serif", textAlign: "center", paddingBottom: 12 }}>まだ桶がありません</div>
+            <div style={{ color: "#444", fontSize: 12, fontFamily: "'Noto Sans JP', sans-serif", textAlign: "center", paddingBottom: 12 }}>まだ箱がありません</div>
           )}
           {buckets.map((b) => (
             <div key={b.id} onClick={() => addToExisting(b.id)}
               style={{ padding: "12px 14px", background: "rgba(255,255,255,0.03)", border: "1px solid #1f1f2f", borderRadius: 10, marginBottom: 8, cursor: "pointer", color: "#ccc", fontSize: 13, fontFamily: "'Noto Sans JP', sans-serif", display: "flex", alignItems: "center", gap: 10, transition: "background 0.15s" }}
               onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.07)")}
               onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.03)")}>
-              <span style={{ fontSize: 18 }}>📦</span>
+              <span style={{ fontSize: 18 }}>🍣</span>
               <span>{b.name}</span>
             </div>
           ))}
           <div style={{ marginTop: 12, borderTop: "1px solid #1a1a2a", paddingTop: 12 }}>
-            <div style={{ color: "#555", fontSize: 11, fontFamily: "'Noto Sans JP', sans-serif", marginBottom: 8 }}>新しい桶を作って追加</div>
+            <div style={{ color: "#555", fontSize: 11, fontFamily: "'Noto Sans JP', sans-serif", marginBottom: 8 }}>新しい箱を作って追加</div>
             <div style={{ display: "flex", gap: 8 }}>
               <input
                 value={newName}
                 onChange={(e) => setNewName(e.target.value.slice(0, 20))}
                 onKeyDown={(e) => e.key === "Enter" && createAndAdd()}
-                placeholder="桶の名前（20字まで）"
+                placeholder="箱の名前（20字まで）"
                 style={{ flex: 1, background: "rgba(255,255,255,0.04)", border: "1px solid #333", borderRadius: 8, padding: "8px 12px", color: "#e0e0e0", fontSize: 13, fontFamily: "'Noto Sans JP', sans-serif", outline: "none" }}
               />
               <button onClick={createAndAdd} disabled={!newName.trim()}
@@ -868,12 +868,12 @@ function BucketDetailModal({ bucket, userId, onClose, likedIds, onOpenComments }
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.88)", zIndex: 110, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }} onClick={onClose}>
       <div style={{ background: "#0f0f1a", border: "1px solid #2a2a3a", borderRadius: 20, width: "100%", maxWidth: 560, maxHeight: "80vh", overflow: "hidden", display: "flex", flexDirection: "column" }} onClick={(e) => e.stopPropagation()}>
         <div style={{ padding: "16px 20px", borderBottom: "1px solid #1a1a2a", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
-          <span style={{ color: "#e0e0e0", fontFamily: "'Noto Sans JP', sans-serif", fontSize: 14, fontWeight: 700 }}>📦 {bucket.name}</span>
+          <span style={{ color: "#e0e0e0", fontFamily: "'Noto Sans JP', sans-serif", fontSize: 14, fontWeight: 700 }}>🍣 {bucket.name}</span>
           <button onClick={onClose} style={{ background: "none", border: "none", color: "#666", fontSize: 20, cursor: "pointer" }}>✕</button>
         </div>
         <div style={{ flex: 1, overflowY: "auto", padding: 16 }}>
           {bucketPosts.length === 0 && (
-            <div style={{ color: "#444", fontSize: 13, fontFamily: "'Noto Sans JP', sans-serif", textAlign: "center", paddingTop: 24 }}>桶の中は空です</div>
+            <div style={{ color: "#444", fontSize: 13, fontFamily: "'Noto Sans JP', sans-serif", textAlign: "center", paddingTop: 24 }}>箱の中は空です</div>
           )}
           {bucketPosts.map((post) => {
             const tier = TIER_CONFIG[post.tier ?? "normal"];
@@ -885,7 +885,7 @@ function BucketDetailModal({ bucket, userId, onClose, likedIds, onOpenComments }
                 >
                   <div style={{ color: "#666", fontSize: 10, fontFamily: "'Noto Sans JP', sans-serif", marginBottom: 4, display: "flex", alignItems: "center", gap: 8 }}>
                     <span>#{post.room || "フリー"}</span>
-                    <span style={{ color: likedIds.has(post.id) ? tier.glow : "#555" }}>🍽 {post.likes}</span>
+                    <span style={{ color: likedIds.has(post.id) ? tier.glow : "#555" }}>🥢 {post.likes}</span>
                   </div>
                   <p style={{ color: "#ccc", fontSize: 13, margin: 0, fontFamily: "'Noto Sans JP', sans-serif", lineHeight: 1.65 }}>{post.content}</p>
                 </div>
@@ -924,7 +924,7 @@ function Sidebar({ categories, selected, onSelect, activePage, onChangePage }: {
       <div style={{ borderBottom: "1px solid #1a1a2a", padding: "8px 0" }}>
         {([
           ["home",       "🏠", "ホーム"],
-          ["collection", "📦", "コレクション"],
+          ["collection", "🍣", "コレクション"],
         ] as [NavPage, string, string][]).map(([page, icon, label]) => (
           <div key={page} onClick={() => onChangePage(page)} style={{ padding: "9px 16px", display: "flex", alignItems: "center", gap: 8, cursor: "pointer", color: activePage === page ? "#c0392b" : "#555", fontSize: 13, fontFamily: "'Noto Sans JP', sans-serif", fontWeight: 600, background: activePage === page ? "rgba(192,57,43,0.08)" : "transparent", transition: "all 0.2s" }}>
             <span>{icon}</span><span>{label}</span>
@@ -978,7 +978,7 @@ function BottomNav({ activePage, onChangePage }: { activePage: NavPage; onChange
     <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "rgba(8,8,18,0.98)", borderTop: "1px solid #1a1a2a", display: "flex", zIndex: 50 }}>
       {([
         ["home",       "🏠", "ホーム"],
-        ["collection", "📦", "コレクション"],
+        ["collection", "🍣", "コレクション"],
         ["settings",   "⚙️", "設定"],
       ] as [NavPage, string, string][]).map(([page, icon, label]) => (
         <div key={page} onClick={() => onChangePage(page)} style={{ flex: 1, padding: "10px 0 8px", display: "flex", flexDirection: "column", alignItems: "center", gap: 3, cursor: "pointer", color: activePage === page ? "#c0392b" : "#444" }}>
@@ -995,7 +995,7 @@ function StatsBar({ posts, likedIds }: { posts: Post[]; likedIds: Set<number> })
   return (
     <div style={{ display: "flex", gap: 0, borderBottom: "1px solid #1a1a2a", background: "rgba(5,5,12,0.9)" }}>
       {([
-        ["🍽", "総皿数",   posts.length],
+        ["🥢", "総皿数",   posts.length],
         ["✅", "取った皿", likedIds.size],
         ["✨", "金皿",     goldCount],
       ] as [string, string, number][]).map(([icon, label, val]) => (
@@ -1104,7 +1104,7 @@ export default function App() {
   };
 
   const getNextBucketName = () => {
-    const base = "新しい桶";
+    const base = "新しい箱";
     const names = new Set(buckets.map((b) => b.name));
     if (!names.has(base)) return base;
     for (let i = 2; ; i++) {
@@ -1165,7 +1165,7 @@ export default function App() {
               <img src="/logo.svg" alt="あにすし" style={{ height: 24 }} />
               <div style={{ display: "flex", gap: 10 }}>
                 {([
-                  ["🍽", posts.length],
+                  ["🥢", posts.length],
                   ["✅", likedIds.size],
                   ["✨", posts.filter((p) => p.tier === "gold").length],
                 ] as [string, number][]).map(([icon, val]) => (
@@ -1180,11 +1180,11 @@ export default function App() {
             <div>
               <div style={{ color: "#e0e0e0", fontSize: 16, fontWeight: 700, fontFamily: "'Noto Serif JP', serif" }}>
                 {activePage === "collection"
-                  ? "📦 コレクション"
+                  ? "🍣 コレクション"
                   : `${selected?.sub?.icon ?? ""} ${selected?.sub?.label ?? ""} › #${selected?.room ?? "ホーム"}`}
               </div>
               <div style={{ color: "#444", fontSize: 10, marginTop: 2 }}>
-                {activePage === "collection" ? "取った皿・桶を管理" : "回転中・ホバーで停止"}
+                {activePage === "collection" ? "取った皿・箱を管理" : "回転中・ホバーで停止"}
               </div>
             </div>
           )}
@@ -1240,16 +1240,16 @@ export default function App() {
                 )}
               </div>
 
-              {/* 桶一覧 */}
+              {/* 箱一覧 */}
               <div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                  <div style={{ color: "#e0e0e0", fontSize: 11, letterSpacing: 2, fontFamily: "'Noto Sans JP', sans-serif" }}>━━ 桶一覧 ━━</div>
+                  <div style={{ color: "#e0e0e0", fontSize: 11, letterSpacing: 2, fontFamily: "'Noto Sans JP', sans-serif" }}>━━ 箱一覧 ━━</div>
                   <button
                     onClick={() => { setNewBucketName(getNextBucketName()); setCreatingBucket(true); }}
                     style={{ padding: "6px 14px", background: "rgba(255,255,255,0.04)", border: "1px solid #2a2a3a", borderRadius: 8, color: "#777", fontSize: 12, cursor: "pointer", fontFamily: "'Noto Sans JP', sans-serif", transition: "all 0.2s" }}
                     onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#555"; e.currentTarget.style.color = "#bbb"; }}
                     onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#2a2a3a"; e.currentTarget.style.color = "#777"; }}>
-                    ＋ 桶を作る
+                    ＋ 箱を作る
                   </button>
                 </div>
 
@@ -1279,7 +1279,7 @@ export default function App() {
                 )}
 
                 {buckets.length === 0 && !creatingBucket ? (
-                  <div style={{ color: "#333", fontSize: 13, fontFamily: "'Noto Sans JP', sans-serif" }}>まだ桶がありません。桶を作って皿を整理しましょう！</div>
+                  <div style={{ color: "#333", fontSize: 13, fontFamily: "'Noto Sans JP', sans-serif" }}>まだ箱がありません。箱を作って皿を整理しましょう！</div>
                 ) : (
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 10 }}>
                     {buckets.map((b) => (
@@ -1288,7 +1288,7 @@ export default function App() {
                         onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.07)"; e.currentTarget.style.borderColor = "#333"; }}
                         onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.03)"; e.currentTarget.style.borderColor = "#1f1f2f"; }}>
                         <div onClick={() => setViewingBucket(b)} style={{ cursor: "pointer" }}>
-                          <div style={{ fontSize: 28, marginBottom: 8 }}>📦</div>
+                          <div style={{ fontSize: 28, marginBottom: 8 }}>🍣</div>
                           <div style={{ color: "#ccc", fontSize: 13, fontFamily: "'Noto Sans JP', sans-serif", fontWeight: 600 }}>{b.name}</div>
                         </div>
                         <button
