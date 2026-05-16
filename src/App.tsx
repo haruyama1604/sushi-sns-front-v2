@@ -1235,7 +1235,7 @@ export default function App() {
                 </div>
 
                 {creatingBucket && (
-                  <div style={{ marginBottom: 16 }}>
+                  <div style={{ marginBottom: 16, display: "flex", gap: 8 }}>
                     <input
                       ref={newBucketInputRef}
                       autoFocus
@@ -1243,12 +1243,19 @@ export default function App() {
                       onChange={(e) => setNewBucketName(e.target.value.slice(0, 20))}
                       onFocus={(e) => e.target.select()}
                       onKeyDown={(e) => {
-                        if (e.key === "Enter") { e.currentTarget.blur(); }
-                        if (e.key === "Escape") { setNewBucketName(""); e.currentTarget.blur(); }
+                        if (e.key === "Enter") handleCreateBucket();
+                        if (e.key === "Escape") { setCreatingBucket(false); setNewBucketName(""); }
                       }}
-                      onBlur={handleCreateBucket}
-                      style={{ width: "100%", boxSizing: "border-box", background: "rgba(255,255,255,0.06)", border: "1px solid #555", borderRadius: 8, padding: "8px 12px", color: "#e0e0e0", fontSize: 13, fontFamily: "'Noto Sans JP', sans-serif", outline: "none" }}
+                      onBlur={() => { setCreatingBucket(false); setNewBucketName(""); }}
+                      style={{ flex: 1, boxSizing: "border-box", background: "rgba(255,255,255,0.06)", border: "1px solid #555", borderRadius: 8, padding: "8px 12px", color: "#e0e0e0", fontSize: 13, fontFamily: "'Noto Sans JP', sans-serif", outline: "none" }}
                     />
+                    <button
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={handleCreateBucket}
+                      style={{ padding: "8px 16px", background: "rgba(192,57,43,0.2)", border: "1px solid #e74c3c", borderRadius: 8, color: "#e74c3c", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'Noto Sans JP', sans-serif", whiteSpace: "nowrap" }}
+                    >
+                      決定
+                    </button>
                   </div>
                 )}
 
