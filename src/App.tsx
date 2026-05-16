@@ -379,8 +379,8 @@ function ConveyorBelt({ posts, likedIds, onLike, onUnlike, onOpenComments, userI
           ))}
         </div>
       </div>
-      {/* レーン2 */}
-      {(laneCount ?? 2) === 2 && (
+      {/* レーン2（スマホ横モードでは非表示） */}
+      {(laneCount ?? 2) === 2 && !isMobile && (
         <div style={{ position: "relative", overflow: "hidden" }}>
           <div ref={track2Ref} style={{ display: "flex", gap: 16, width: "max-content", padding: "0 16px" }}>
             {doubled.map((post, i) => (
@@ -703,17 +703,19 @@ function SettingsModal({ onClose, reducedMotion, onToggleReducedMotion, showSpoi
             </div>
           )}
 
-          {/* レーン数 */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: "1px solid #1a1a2a" }}>
-            <span style={{ color: "#e0e0e0", fontSize: 13, fontFamily: "'Noto Sans JP', sans-serif" }}>流れるレーン数</span>
-            <div style={{ display: "flex", gap: 4 }}>
-              {([1, 2] as const).map((n) => (
-                <button key={n} onClick={() => onSetLaneCount(n)} style={{ padding: "3px 14px", borderRadius: 8, border: `1px solid ${laneCount === n ? "#e74c3c" : "#333"}`, background: laneCount === n ? "rgba(192,57,43,0.2)" : "rgba(255,255,255,0.03)", color: laneCount === n ? "#e74c3c" : "#666", fontSize: 12, cursor: "pointer", fontWeight: 700 }}>
-                  {n}本
-                </button>
-              ))}
+          {/* レーン数（スマホ横モードでは非表示） */}
+          {!(isMobile && mobileConveyorDir === "horizontal") && (
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: "1px solid #1a1a2a" }}>
+              <span style={{ color: "#e0e0e0", fontSize: 13, fontFamily: "'Noto Sans JP', sans-serif" }}>流れるレーン数</span>
+              <div style={{ display: "flex", gap: 4 }}>
+                {([1, 2] as const).map((n) => (
+                  <button key={n} onClick={() => onSetLaneCount(n)} style={{ padding: "3px 14px", borderRadius: 8, border: `1px solid ${laneCount === n ? "#e74c3c" : "#333"}`, background: laneCount === n ? "rgba(192,57,43,0.2)" : "rgba(255,255,255,0.03)", color: laneCount === n ? "#e74c3c" : "#666", fontSize: 12, cursor: "pointer", fontWeight: 700 }}>
+                    {n}本
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* 1本目の向き */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: "1px solid #1a1a2a" }}>
