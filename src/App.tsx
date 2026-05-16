@@ -519,9 +519,9 @@ function CommentModal({ post, onClose, likedIds, userId, fromBucket, onBackToBuc
                     {c.user_id === userId && (
                       <button
                         onClick={() => handleDeleteComment(c.id)}
-                        style={{ position: "absolute", top: 4, right: 6, background: "none", border: "none", color: "#333", fontSize: 11, cursor: "pointer", padding: "1px 3px", transition: "color 0.15s" }}
+                        style={{ position: "absolute", top: 4, right: 6, background: "none", border: "none", color: "#c0392b", fontSize: 16, cursor: "pointer", padding: "1px 3px", transition: "color 0.15s" }}
                         onMouseEnter={(e) => (e.currentTarget.style.color = "#e74c3c")}
-                        onMouseLeave={(e) => (e.currentTarget.style.color = "#333")}>🗑</button>
+                        onMouseLeave={(e) => (e.currentTarget.style.color = "#c0392b")}>🗑</button>
                     )}
                     <div style={{ color: "#555", fontSize: 10, fontFamily: "'Noto Sans JP', sans-serif", marginBottom: 4 }}>
                       {c.user_id === "system" ? "運営" : "ユーザー"} · {c.created_at.slice(0, 16).replace("T", " ")}
@@ -552,9 +552,9 @@ function CommentModal({ post, onClose, likedIds, userId, fromBucket, onBackToBuc
                         {r.user_id === userId && (
                           <button
                             onClick={() => handleDeleteReply(r.id, c.id)}
-                            style={{ position: "absolute", top: 4, right: 6, background: "none", border: "none", color: "#333", fontSize: 11, cursor: "pointer", padding: "1px 3px", transition: "color 0.15s" }}
+                            style={{ position: "absolute", top: 4, right: 6, background: "none", border: "none", color: "#c0392b", fontSize: 16, cursor: "pointer", padding: "1px 3px", transition: "color 0.15s" }}
                             onMouseEnter={(e) => (e.currentTarget.style.color = "#e74c3c")}
-                            onMouseLeave={(e) => (e.currentTarget.style.color = "#333")}>🗑</button>
+                            onMouseLeave={(e) => (e.currentTarget.style.color = "#c0392b")}>🗑</button>
                         )}
                         <div style={{ color: "#555", fontSize: 10, fontFamily: "'Noto Sans JP', sans-serif", marginBottom: 3 }}>
                           {r.user_id === "system" ? "運営" : "ユーザー"} · {r.created_at.slice(0, 16).replace("T", " ")}
@@ -1290,9 +1290,9 @@ export default function App() {
                         </div>
                         <button
                           onClick={(e) => { e.stopPropagation(); handleDeleteBucket(b.id); }}
-                          style={{ position: "absolute", top: 8, right: 8, background: "none", border: "none", color: "#333", fontSize: 14, cursor: "pointer", padding: "2px 4px", borderRadius: 4, transition: "color 0.15s" }}
+                          style={{ position: "absolute", top: 8, right: 8, background: "none", border: "none", color: "#c0392b", fontSize: 21, cursor: "pointer", padding: "2px 4px", borderRadius: 4, transition: "color 0.15s" }}
                           onMouseEnter={(e) => (e.currentTarget.style.color = "#e74c3c")}
-                          onMouseLeave={(e) => (e.currentTarget.style.color = "#333")}
+                          onMouseLeave={(e) => (e.currentTarget.style.color = "#c0392b")}
                         >🗑</button>
                       </div>
                     ))}
