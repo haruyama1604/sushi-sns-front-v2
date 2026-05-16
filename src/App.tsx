@@ -629,7 +629,7 @@ function PostModal({ currentRoom, onClose, onPosted, userId }: { currentRoom: st
       <div style={{ background: "#0f0f1a", border: "1px solid #444", borderRadius: 20, width: "100%", maxWidth: 480, overflow: "hidden" }} onClick={(e) => e.stopPropagation()}>
         <div style={{ padding: "16px 20px", borderBottom: "1px solid #222", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
           <span style={{ color: "#e0e0e0", fontFamily: "'Noto Sans JP', sans-serif", fontSize: 14, fontWeight: 700, flexShrink: 0 }}>
-            🥢 皿に乗せる — <span style={{ color: "#c0392b" }}>#{currentRoom || "ルームを選択"}</span>
+            🍽️ 皿に乗せる — <span style={{ color: "#c0392b" }}>#{currentRoom || "ルームを選択"}</span>
           </span>
           <button
             onClick={() => setIsSpoiler((v) => !v)}
