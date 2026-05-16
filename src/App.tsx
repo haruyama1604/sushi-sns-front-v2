@@ -368,7 +368,7 @@ function ConveyorBelt({ posts, likedIds, onLike, onUnlike, onOpenComments, userI
   }
 
   return (
-    <div style={{ position: "relative", overflowX: "hidden", padding: isMobile ? "8px 0" : "20px 0" }}
+    <div style={{ position: "relative", overflow: "hidden", padding: isMobile ? "4px 0 8px" : "20px 0" }}
       onMouseEnter={() => setHoverPaused(true)} onMouseLeave={() => setHoverPaused(false)}
       onClick={() => setTouchPaused((v) => !v)}>
       {/* レーン1: 右から左 */}
