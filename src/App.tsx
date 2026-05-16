@@ -277,7 +277,7 @@ function PlateCard({
             onMouseEnter={(e) => { e.currentTarget.style.color = "#aaa"; e.currentTarget.style.borderColor = "#444"; }}
             onMouseLeave={(e) => { e.currentTarget.style.color = "#666"; e.currentTarget.style.borderColor = "#2a2a3a"; }}
           >
-            📦 桶に追加
+            📦 桶に入れる
           </button>
         )}
       </div>
