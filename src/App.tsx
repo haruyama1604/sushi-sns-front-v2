@@ -1034,6 +1034,13 @@ export default function App() {
       .catch(() => {});
   }, []);
 
+  const fetchLikedIds = useCallback(() => {
+    fetch(`${API_BASE}/posts/liked?user_id=${userId}`)
+      .then((r) => r.json())
+      .then((ids: number[]) => setLikedIds(new Set(ids)))
+      .catch(() => {});
+  }, [userId]);
+
   const fetchBuckets = useCallback(() => {
     fetch(`${API_BASE}/buckets?user_id=${userId}`)
       .then((r) => r.json())
@@ -1042,6 +1049,7 @@ export default function App() {
   }, [userId]);
 
   useEffect(() => { fetchPosts(); }, [fetchPosts]);
+  useEffect(() => { fetchLikedIds(); }, [fetchLikedIds]);
   useEffect(() => { fetchBuckets(); }, [fetchBuckets]);
 
   const handleLike = useCallback(async (id: number) => {
