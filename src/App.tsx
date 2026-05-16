@@ -143,7 +143,7 @@ function PlateCard({
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ user_id: userId }),
-    }).then(() => onDelete?.(post.id));
+    }).then((res) => { if (res.ok) onDelete?.(post.id); });
   };
 
   return (
